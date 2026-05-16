@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+# var2-ai/skills setup — symlink the VAR2 skill into your agent's skills dir.
+# VAR2 is an MCP server: this script does NOT configure the server or store
+# any API key. Do the MCP registration step yourself (see INSTALL.md).
+# Idempotent: safe to run multiple times.
+set -euo pipefail
+
+if [ -t 1 ] && command -v tput &>/dev/null && [ "$(tput colors 2>/dev/null || echo 0)" -ge 8 ]; then
+  GREEN=$(tput setaf 2) YELLOW=$(tput setaf 3) RED=$(tput setaf 1) BOLD=$(tput bold) RESET=$(tput sgr0)
+else
+  GREEN="" YELLOW="" RED="" BOLD="" RESET=""
+fi
+
+ok()   { echo "${GREEN}✓${RESET} $1"; }
+warn() { echo "${YELLOW}!${RESET} $1"; }
+err()  { echo "${RED}✗${RESET} $1"; }
+info() { echo "${BOLD}→${RESET} $1"; }
+
+SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ ! -f "$SKILL_DIR/VERSION" ] || [ ! -d "$SKILL_DIR/var2-generate" ]; then
+  err "Run this from the var2-ai/skills repo root (VERSION and var2-generate/ not found)."
+  exit 1
+fi
+
+VERSION="$(tr -d '[:space:]' < "$SKILL_DIR/VERSION")"
+echo
+echo "${BOLD}VAR2 Skills setup — v$VERSION${RESET}"
+echo
+
+HOST_OVERRIDE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --host) shift; [ $# -eq 0 ] && { err "--host requires: claude | <agent>"; exit 1; }; HOST_OVERRIDE="$1"; shift ;;
+    --host=*) HOST_OVERRIDE="${1#--host=}"; shift ;;
+    --help|-h)
+      cat <<EOF
+Usage: ./setup [--host <agent>]
+
+  --host <agent>   Force install path (e.g. claude). Auto-detected if omitted.
+  --help           Show this message
+
+This only symlinks the skill. Register the VAR2 MCP server separately —
+see INSTALL.md.
+EOF
+      exit 0 ;;
+    *) warn "Unknown flag: $1"; shift ;;
+  esac
+done
+
+detect_host() {
+  if [ -n "$HOST_OVERRIDE" ]; then echo "$HOST_OVERRIDE"; return; fi
+  if [ -d "$HOME/.claude" ]; then echo "claude"; return; fi
+  echo "unknown"
+}
+
+HOST="$(detect_host)"
+case "$HOST" in
+  claude)  TARGET_DIR="$HOME/.claude/skills" ;;
+  unknown)
+    warn "Could not auto-detect the agent host."
+    info "Re-run with --host <agent>, or copy var2-generate/ into your agent's skills directory manually."
+    exit 1 ;;
+  *)       TARGET_DIR="$HOME/.$HOST/skills" ;;
+esac
+
+SKILLS=(var2-generate)
+
+ok "Detected host: $HOST"
+ok "Target path: $TARGET_DIR/<skill-name>"
+echo
+
+mkdir -p "$TARGET_DIR"
+for skill in "${SKILLS[@]}"; do
+  src="$SKILL_DIR/$skill"
+  dst="$TARGET_DIR/$skill"
+  if [ ! -d "$src" ]; then err "Source missing: $src"; continue; fi
+  if [ -L "$dst" ]; then
+    if [ "$(readlink "$dst")" = "$src" ]; then
+      ok "$skill already symlinked"
+    else
+      info "$skill: replacing stale symlink"
+      rm "$dst"; ln -s "$src" "$dst"; ok "$skill symlinked"
+    fi
+  elif [ -e "$dst" ]; then
+    warn "$dst exists but is not a symlink to $src — leaving alone."
+  else
+    ln -s "$src" "$dst"; ok "$skill symlinked"
+  fi
+done
+echo
+
+fail=0
+for skill in "${SKILLS[@]}"; do
+  if [ -f "$TARGET_DIR/$skill/SKILL.md" ]; then
+    ok "$skill present"
+  else
+    err "$skill missing at $TARGET_DIR/$skill/SKILL.md"; fail=1
+  fi
+done
+echo
+
+if [ "$fail" -eq 0 ]; then
+  cat <<EOF
+${GREEN}${BOLD}Skill installed.${RESET}
+
+Next, register the VAR2 MCP server (one time):
+
+  1. Create an API key: https://www.var2.ai/dashboard/settings?tab=developers
+  2. claude mcp add var2 --transport http https://www.var2.ai/api/mcp \\
+       --header "Authorization: Bearer <YOUR_VAK_KEY>"
+
+Then try in your agent:
+
+  "List the VAR2 models."
+  "Create a 9:16 image with the Hebrew text 'פתוח 24 שעות'."
+  "Make an 8-second cinematic video of a fox in the snow."
+
+Docs: README.md · INSTALL.md · CONTRIBUTING.md
+EOF
+else
+  err "Setup completed with errors. Review the messages above."
+  exit 1
+fi
