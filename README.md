@@ -61,4 +61,4 @@ guidance.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](var2-skills/LICENSE).
