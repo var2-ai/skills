@@ -103,11 +103,15 @@ if [ "$fail" -eq 0 ]; then
   cat <<EOF
 ${GREEN}${BOLD}Skill installed.${RESET}
 
-Next, register the VAR2 MCP server (one time):
+Next, connect the VAR2 MCP server (one time, OAuth — sign in, nothing to paste):
 
-  1. Create an API key: https://www.var2.ai/dashboard/settings?tab=developers
-  2. claude mcp add var2 --transport http https://www.var2.ai/api/mcp \\
-       --header "Authorization: Bearer <YOUR_VAK_KEY>"
+  claude mcp add var2 --transport http https://www.var2.ai/api/mcp
+
+  (A browser opens to sign in to VAR2 and approve access.)
+  claude.ai / desktop users: Settings -> Connectors -> Add custom connector,
+  name VAR2, URL https://www.var2.ai/api/mcp, Connect, sign in.
+  Headless/CI: add --header "Authorization: Bearer <vak key>" instead
+  (key from https://www.var2.ai/dashboard/settings?tab=developers).
 
 Then try in your agent:
 

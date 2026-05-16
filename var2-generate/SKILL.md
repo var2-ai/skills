@@ -1,5 +1,5 @@
 ---
-version: 0.1.0
+version: 0.2.0
 name: var2-generate
 description: >-
   Generate images, videos, music, and 3D models with VAR2.ai through the VAR2
@@ -29,15 +29,16 @@ names may look like `mcp__var2__var2_create_image` — same tools.
 
 Do this **once** at the start of a session, not before every job.
 
-1. Call `var2_list_models`. If it returns a model list, the MCP server is
-   reachable and your API key is valid — proceed.
-2. If it fails with an auth error (`401`, `invalid_key`, `expired`,
-   `revoked`), the user's VAR2 API key is missing or bad. Point them to
-   **https://www.var2.ai/dashboard/settings?tab=developers** to create a
-   `vak_...` key, then to re-run the install step in `INSTALL_FOR_AGENTS.md`.
-   Do not retry blindly.
-3. If it fails with a connection/transport error, the MCP server is not
-   configured. Send the user to `INSTALL_FOR_AGENTS.md`.
+1. Call `var2_list_models`. If it returns a model list, VAR2 is connected and
+   the user is signed in — proceed.
+2. If it fails with an auth error (`401`, a `WWW-Authenticate` / sign-in
+   challenge, `expired`, `revoked`), the OAuth sign-in was not completed or has
+   expired. Ask the user to reconnect and finish the browser sign-in (see
+   `INSTALL_FOR_AGENTS.md`, Step 1). Do not retry blindly. (Only if they use
+   the advanced headless key: their `vak_` key is bad — they recreate it at
+   **https://www.var2.ai/dashboard/settings?tab=developers**.)
+3. If it fails with a connection/transport error or the tool is missing, the
+   MCP server is not connected. Send the user to `INSTALL_FOR_AGENTS.md`.
 
 `var2_list_models` is the **source of truth** for model IDs, pricing, and
 per-model capabilities. `references/model-catalog.md` is selection guidance;

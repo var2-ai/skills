@@ -6,49 +6,52 @@ One skill ships in this repo:
   through the VAR2 MCP server, with model selection, prompt engineering, cost
   estimation, polling, and Hebrew/Arabic text guidance.
 
-VAR2 is an **MCP server**, not a CLI. Setup is two parts: register the MCP
-server, then install the skill.
+VAR2 is an **MCP server with OAuth sign-in** — no CLI, and in the normal flow
+no API key to paste. Setup is two parts: **connect VAR2**, then (in Claude
+Code) **install the skill**.
 
-## Prerequisites
+## Step 1 — Connect VAR2 (OAuth, recommended)
 
-1. A VAR2 API key — create one at
-   **https://www.var2.ai/dashboard/settings?tab=developers** (looks like
-   `vak_live_xxxxxxxx_xxxxxxxxxxxxxxxx`).
-2. Register the VAR2 MCP server with your agent.
+You sign in with your VAR2 account in the browser — nothing to copy/paste.
 
-   **Claude Code:**
+**claude.ai / Claude desktop:**
 
-   ```bash
-   claude mcp add var2 --transport http https://www.var2.ai/api/mcp \
-     --header "Authorization: Bearer <YOUR_VAK_KEY>"
-   ```
+1. **Settings → Connectors → Add custom connector**
+2. Name it **VAR2**, URL: `https://www.var2.ai/api/mcp`
+3. Click **Connect**, sign in with your VAR2 account, approve access.
 
-   **Other MCP hosts:** add an HTTP MCP server named `var2` pointing at
-   `https://www.var2.ai/api/mcp` with an `Authorization: Bearer <key>` header.
+**Claude Code:**
 
-## Option 1 — `npx skills` (recommended, cross-agent)
+```bash
+claude mcp add var2 --transport http https://www.var2.ai/api/mcp
+```
 
-Works with Claude Code and any agent that loads
-`~/.<agent>/skills/<name>/SKILL.md`. Requires Node.js.
+A browser opens for sign-in; approve and you're connected.
+
+**Other MCP hosts:** add an HTTP MCP server at `https://www.var2.ai/api/mcp`;
+the host discovers the OAuth flow automatically.
+
+> **Advanced / headless (CI, servers, no browser):** create a `vak_` key at
+> **https://www.var2.ai/dashboard/settings?tab=developers** and connect with
+> `--header "Authorization: Bearer <KEY>"`. Most users should use OAuth above.
+
+## Step 2 — Install the skill (Claude Code)
+
+Recommended (cross-agent), requires Node.js:
 
 ```bash
 npx skills add var2-ai/skills
 ```
 
-## Option 2 — Claude Code marketplace
-
-Inside Claude Code:
+Claude Code marketplace alternative:
 
 ```
 /plugin marketplace add var2-ai/skills
 /plugin install var2@var2
 ```
 
-Registers the skill as `/var2:generate`.
-
-## Option 3 — Setup script
-
-Clones the repo and symlinks the skill into your agent's skills directory.
+Setup-script fallback (clone + symlink; does **not** connect VAR2 — do Step 1
+first):
 
 ```bash
 git clone --depth 1 https://github.com/var2-ai/skills.git
@@ -56,18 +59,19 @@ cd skills
 ./setup
 ```
 
-Auto-detects Claude Code (override with `--host <agent>`). It does **not**
-configure the MCP server — do the Prerequisites step yourself. Idempotent.
+The skill is a Claude Code add-on that makes the agent use VAR2 well.
+claude.ai / desktop users get the tools from the connector alone and can skip
+Step 2.
 
 ## Verify
 
-In your agent, ask:
+Ask your agent:
 
 > "List the VAR2 models."
 
-The agent should call `var2_list_models` and return the catalog. If it errors
-with `401`, recheck the API key; if the tool isn't found, recheck the MCP
-server registration.
+The agent should call `var2_list_models` and return the catalog. If it gets a
+sign-in / `401` challenge, finish the browser sign-in from Step 1; if the tool
+isn't found, recheck the connector.
 
 ## Updating
 

@@ -9,15 +9,12 @@ server** (no CLI to install).
 
 ## Quick start
 
-1. Create a VAR2 API key:
-   **https://www.var2.ai/dashboard/settings?tab=developers**
-2. Register the MCP server (Claude Code):
-
-   ```bash
-   claude mcp add var2 --transport http https://www.var2.ai/api/mcp \
-     --header "Authorization: Bearer <YOUR_VAK_KEY>"
-   ```
-3. Install the skill:
+1. **Connect VAR2** (OAuth — sign in, nothing to paste):
+   - **claude.ai / desktop:** Settings → Connectors → Add custom connector →
+     name **VAR2**, URL `https://www.var2.ai/api/mcp` → Connect → sign in.
+   - **Claude Code:** `claude mcp add var2 --transport http https://www.var2.ai/api/mcp`
+     (a browser opens to sign in).
+2. **Install the skill** (Claude Code add-on):
 
    ```bash
    npx skills add var2-ai/skills
@@ -61,4 +58,4 @@ guidance.
 
 ## License
 
-MIT — see [`LICENSE`](var2-skills/LICENSE).
+MIT — see [`LICENSE`](LICENSE).

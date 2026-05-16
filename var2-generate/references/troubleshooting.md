@@ -7,10 +7,10 @@ turn). Never invent a model ID — call `var2_list_models` when unsure.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `401`, `invalid_key`, `unauthorized` | Missing/typo'd API key | Recreate a `vak_...` key at https://www.var2.ai/dashboard/settings?tab=developers, re-run `INSTALL_FOR_AGENTS.md`. |
-| `expired`, `revoked`, `rotated` | Key no longer valid | Issue a fresh key on the same page; update the MCP config. |
-| Connection/transport error, tool not found | MCP server not configured in this agent | Follow `INSTALL_FOR_AGENTS.md`; confirm the server URL is `https://www.var2.ai/api/mcp`. |
-| `403` / scope error | Key lacks the scope for that tool | The key needs the matching scope (image/video/audio/3d/modify). Recreate with the needed scopes. |
+| `401`, `WWW-Authenticate` / sign-in challenge | OAuth sign-in not completed | Reconnect VAR2 and finish the browser sign-in (`INSTALL_FOR_AGENTS.md` Step 1). |
+| `expired`, `revoked` | Session/grant ended | Reconnect and sign in again. (Headless key users: recreate the `vak_` key at https://www.var2.ai/dashboard/settings?tab=developers.) |
+| Connection/transport error, tool not found | MCP server not connected in this agent | Follow `INSTALL_FOR_AGENTS.md`; confirm the server URL is `https://www.var2.ai/api/mcp`. |
+| `403` / scope error | Grant missing required access | Reconnect and approve all requested access on the consent screen. |
 | `429` / rate or concurrency limit | Too many concurrent jobs | Wait for the in-flight job to finish, then retry. |
 
 ## Job submission
