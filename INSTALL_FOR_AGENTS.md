@@ -54,7 +54,7 @@ Claude Code plugin alternative:
 /plugin install var2@var2
 ```
 
-Either installs the `var2-generate` skill into the agent's skills directory.
+Either installs the `var2-creative-orchestrator` skill into the agent's skills directory.
 
 ## Step 4 — Verify
 

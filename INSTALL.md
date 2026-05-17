@@ -2,9 +2,11 @@
 
 One skill ships in this repo:
 
-- **`var2-generate`** — generate and edit images, videos, music, and 3D models
-  through the VAR2 MCP server, with model selection, prompt engineering, cost
-  estimation, polling, and Hebrew/Arabic text guidance.
+- **`var2-creative-orchestrator`** — decompose any creative idea into a
+  multi-step VAR2 pipeline (image / video / music / 3D) and execute it
+  end-to-end. Handles model selection, cost estimation, parallel-where-possible
+  execution, storyboard pre-flight for multi-shot video, and Hebrew/Arabic
+  text guidance.
 
 VAR2 is an **MCP server**, not a CLI. Setup is two parts: register the MCP
 server, then install the skill.

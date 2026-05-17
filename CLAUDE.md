@@ -26,8 +26,8 @@ no VAR2 internals** here, and there must never be.
 ## Layout
 
 ```
-var2-generate/SKILL.md            # the skill entrypoint (frontmatter required)
-var2-generate/references/*.md     # supporting docs, all linked from SKILL.md
+var2-creative-orchestrator/SKILL.md         # the skill entrypoint (frontmatter required)
+var2-creative-orchestrator/references/*.md  # supporting docs, all linked from SKILL.md
 .claude-plugin/                   # Claude Code plugin + marketplace manifests
 VERSION                           # single source of truth for the version
 setup                             # clone+symlink installer
@@ -39,7 +39,7 @@ setup                             # clone+symlink installer
 `VERSION` is authoritative. On any change to the skill or manifests, bump
 `VERSION` and keep these in sync (CI enforces it):
 
-- `var2-generate/SKILL.md` frontmatter `version`
+- `var2-creative-orchestrator/SKILL.md` frontmatter `version`
 - `.claude-plugin/plugin.json` `version`
 - `.claude-plugin/marketplace.json` `plugins[0].version`
 

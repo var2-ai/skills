@@ -14,12 +14,12 @@ Thanks for improving the VAR2 skills package.
 
 ## Making a change
 
-1. Edit `var2-generate/SKILL.md` and/or `var2-generate/references/*.md`.
+1. Edit `var2-creative-orchestrator/SKILL.md` and/or `var2-creative-orchestrator/references/*.md`.
 2. If you add a reference file, link it from `SKILL.md` (CI fails on orphans
    and on dead links).
 3. **Bump the version** in all four places (CI enforces they match):
    - `VERSION`
-   - `var2-generate/SKILL.md` frontmatter `version`
+   - `var2-creative-orchestrator/SKILL.md` frontmatter `version`
    - `.claude-plugin/plugin.json` `version`
    - `.claude-plugin/marketplace.json` `plugins[0].version`
 4. If you add a skill folder, add it to
@@ -31,7 +31,7 @@ Thanks for improving the VAR2 skills package.
 
 `SKILL.md` frontmatter must have:
 
-- `name` — exactly the directory name (e.g. `var2-generate`)
+- `name` — exactly the directory name (e.g. `var2-creative-orchestrator`)
 - `version` — non-empty, equal to `VERSION`
 - `description` — ≤1024 chars, containing a `Use when` phrase and a `NOT for`
   boundary

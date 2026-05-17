@@ -33,24 +33,26 @@ Full instructions: [`INSTALL.md`](INSTALL.md). Agents: see
 
 | Skill | Invoke | What it does |
 |---|---|---|
-| `var2-generate` | `/var2:generate` | Image / video / music / 3D generation and editing, upscale & background-removal, model selection, cost estimation, polling, Hebrew/Arabic text guidance. |
+| `var2-creative-orchestrator` | `/var2:creative-orchestrator` | Decompose any creative brief into a multi-step VAR2 pipeline (image / video / music / 3D) and execute it end-to-end. Storyboard pre-flight for multi-shot video, parallel-where-possible execution, model selection, cost estimation, Hebrew/Arabic guidance. |
 
 ## What's covered
 
 - **Image** — text-to-image and image-to-image across the VAR2 model lineup
-  (default `nano-banana-pro`), with best-in-class Hebrew/Arabic on-image text.
-- **Video** — text/image/reference/video-to-video (default `veo-3.1`),
-  multi-shot narratives, native-audio models.
+  (defaults `gpt-image-2` / `nano-banana-2`), with strong Hebrew/Arabic
+  on-image text.
+- **Video** — text/image/reference/video-to-video. Default `veo-3.1` for
+  everyday clips; `seedance-2` for anything cinematic. Multi-shot pipelines
+  via character-sheet → storyboard-frame → video pre-flight.
 - **Music** — Suno (`create` / `extend` / `replace-section`), instrumental or
   vocal.
 - **3D** — image-to-3D textured GLB meshes (`trellis-2`).
 - **Modify** — upscale and background removal.
-- **Cost** — token estimation before every non-trivial job.
+- **Cost** — token estimation before every non-trivial pipeline.
 
 Model IDs, capabilities, and pricing are always read live from
 `var2_list_models`; the reference docs under
-[`var2-generate/references/`](var2-generate/references/) are selection
-guidance.
+[`var2-creative-orchestrator/references/`](var2-creative-orchestrator/references/)
+are supplementary selection guidance.
 
 ## Distribution
 

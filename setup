@@ -17,8 +17,8 @@ err()  { echo "${RED}✗${RESET} $1"; }
 info() { echo "${BOLD}→${RESET} $1"; }
 
 SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
-if [ ! -f "$SKILL_DIR/VERSION" ] || [ ! -d "$SKILL_DIR/var2-generate" ]; then
-  err "Run this from the var2-ai/skills repo root (VERSION and var2-generate/ not found)."
+if [ ! -f "$SKILL_DIR/VERSION" ] || [ ! -d "$SKILL_DIR/var2-creative-orchestrator" ]; then
+  err "Run this from the var2-ai/skills repo root (VERSION and var2-creative-orchestrator/ not found)."
   exit 1
 fi
 
@@ -58,12 +58,12 @@ case "$HOST" in
   claude)  TARGET_DIR="$HOME/.claude/skills" ;;
   unknown)
     warn "Could not auto-detect the agent host."
-    info "Re-run with --host <agent>, or copy var2-generate/ into your agent's skills directory manually."
+    info "Re-run with --host <agent>, or copy var2-creative-orchestrator/ into your agent's skills directory manually."
     exit 1 ;;
   *)       TARGET_DIR="$HOME/.$HOST/skills" ;;
 esac
 
-SKILLS=(var2-generate)
+SKILLS=(var2-creative-orchestrator)
 
 ok "Detected host: $HOST"
 ok "Target path: $TARGET_DIR/<skill-name>"
