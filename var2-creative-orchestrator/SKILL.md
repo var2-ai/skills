@@ -167,7 +167,7 @@ With storyboard frames in hand, you now have *multiple reference images* — whi
 - **Option B** — reference-to-video traversing all frames as beats (model hits each panel in sequence)
 - **Option C** — image-to-video × N, one clip per frame, edited together later (maximum fidelity per beat)
 
-See the Pitfalls section "image-to-video vs reference-to-video — and the question you MUST ask" for the full framing. Default to lean toward **Option C** when each frame is a distinct scene/shot in a cut (e.g. four cinematic shots that should clearly transition), and **Option B** when frames are beats of a single continuous arc (e.g. a music video that flows through key compositions). But always confirm — the choice is irreversible.
+See `references/pitfalls.md` ("image-to-video vs reference-to-video") for the full framing. Default to lean toward **Option C** when each frame is a distinct scene/shot in a cut (e.g. four cinematic shots that should clearly transition), and **Option B** when frames are beats of a single continuous arc (e.g. a music video that flows through key compositions). But always confirm — the choice is irreversible.
 
 Once the mode is chosen, each shot uses the storyboard frame(s) as its visual anchor. The video inherits the locked-in look from the storyboard step.
 
@@ -311,78 +311,7 @@ Ready for Step 1?
 
 ---
 
-### Example 3 — "Make me a cartoon character, put them in a comic, now turn it into a realistic cinematic video"
-
-**Naive read:** three disconnected generations.
-
-**Better read:** the *same character* across three visual languages. The whole point is identity persistence. `image_refs` is the secret weapon.
-
-```
-Here's the flow — and the trick that makes it actually work:
-
-**The trick:** every step uses the cartoon character image as `image_refs`, so the same face/outfit/proportions carry from comic to live-action. Without this, you'd get three unrelated people.
-
-**Step 1 — Design the character** (~10s)
-Full body, T-pose-ish, plain background, distinct design choices (hair, outfit, vibe) so the AI can lock identity.
-Model: nano-banana-2, 2K, 1:1, illustrative cartoon style
-
-**Step 2 — Comic page (3-panel)** (~15s)
-Single image laid out as 3 panels: same character in three story beats. Pass the Step 1 image as image_refs to keep them on-model.
-Model: gpt-image-2 with image_refs=[step1], 2K, 4:5 (vertical comic format) — gpt-image-2 is great at multi-panel layouts because of strong prompt adherence
-
-**Step 3 — Realistic cinematic still** (~12s)
-A photoreal version of the character — same outfit, same face structure, but skin/lighting/film grain. This becomes the first frame of the video.
-Model: nano-banana-2 with image_refs=[step1] (and optionally step2), prompt steers it to "cinematic photograph, 35mm, shallow DoF"
-
-**Step 4 — Live-action cinematic clip** (~120s)
-Image-to-video from Step 3 — cinematic camera move, the character is alive.
-Model: seedance-2 (image-to-video), first_frame_url=[step3], 8s, pro mode
-
-Rough cost: ~3,500 tokens (3 images + 1 cinematic video). I'll run estimate_cost for the exact number.
-
-Ready for Step 1?
-```
-
----
-
-### Example 4 — "Make me a music video"
-
-**Naive read:** one video, song over it.
-
-**Better read:** music videos have *sections*. Intro, verse, hook. Visuals shift on the beat. Generate the music first, then design visuals tied to its structure.
-
-```
-Music video plan — with the twist that makes it feel pro:
-
-**The twist:** I'll generate the song first, then design visuals tied to its three sections (intro / drop / outro). Each section gets its own frame, then we animate them and hand you a cut sheet.
-
-**Step 1 — Generate the track** (~120s)
-Suno returns 2 variations — you pick.
-Model: suno V5, prompt describes mood/genre/tempo, instrumental or English lyrics (Suno is shaky on Hebrew)
-
-**Step 2 — Define the visual identity** (~10s)
-One key frame, e.g., the protagonist or the central object. Becomes anchor for all sections.
-Model: flux-2 for photoreal Latin-only, or nano-banana-2 / gpt-image-2 if non-Latin text is in the frame
-
-**Step 3 — Section frames (intro / hook / outro)** (~30s, three quick generations — can run in parallel)
-Three frames, each with image_refs=[step2] for visual unity.
-Model: nano-banana-2 with image_refs (or gpt-image-2 for more complex layouts)
-
-**Step 4 — Animate each section** (~120s each, 3 turns)
-Image-to-video on each frame; pick durations that match the song's section lengths.
-Model: ltx-2.3 (per-second pricing, ideal for matching exact beats) or seedance-2
-
-**Step 5 — Hand off a cut sheet**
-Plain text: "0:00–0:08 intro clip, 0:08–0:24 hook clip, 0:24–0:40 outro clip + your song." User imports into any editor.
-
-Rough cost: depends heavily on clip lengths since ltx-2.3 is per-second. I'll run estimate_cost once we lock the durations.
-
-Ready for Step 1?
-```
-
----
-
-### Example 5 — "Multiverse versions of myself, from a selfie"
+### Example 3 — "Multiverse versions of myself, from a selfie"
 
 **Naive read:** image-to-image six times. Done.
 
@@ -412,37 +341,7 @@ Heads up — six images at once is a chunky parallel batch. Cool with that, or w
 
 ---
 
-### Example 6 — "Turn an old photo of mine into a motion comic"
-
-**Naive read:** one image-to-video.
-
-**Better read:** *motion comics* have a distinct grammar — Ken Burns pans across stylized panels, sometimes with subtle in-panel motion (eyes blinking, hair moving). Treat each panel of a comic adaptation as its own micro-shot.
-
-```
-Motion comic — the trick:
-
-**The trick:** I'll *re-style* your photo into a comic illustration first (so it looks like a panel, not a filtered photo), then animate it with the subtle Ken Burns + idle-motion that motion comics use. The combination is what sells it.
-
-**Step 1 — Stylize the photo into a comic panel** (~10s)
-Image-to-image on your photo, prompt steers it to "ink-and-color comic page, halftone shadows, bold linework, dramatic angles."
-Model: nano-banana-2 image-to-image, 2K
-
-**Step 2 — Upscale the stylized panel** (~5s)
-Comics need crisp lines — soft generated images animate poorly.
-Model: topaz-upscale
-
-**Step 3 — Animate with motion-comic grammar** (~90s)
-Image-to-video, prompt for "slow cinematic push-in, hair gently moves, subtle eye blink, paper texture stays still." The trick is asking for *micro* motion, not full animation.
-Model: ltx-2.3 (image-to-video), 4-5s — short clips feel more comic-like than long ones
-
-Rough cost: ~1,200 tokens (image-to-image + upscale + short video). I'll run estimate_cost for the exact number.
-
-Want me to extend this to multiple panels (one photo per panel) and stitch into a longer motion comic? That's a bigger pipeline if you're up for it.
-```
-
----
-
-### Example 7 — "A 30-second cinematic video of a girl escaping a scary institution"
+### Example 4 — "A 30-second cinematic video of a girl escaping a scary institution"
 
 **Naive read:** four seedance prompts back-to-back. Hope for the best.
 
@@ -492,100 +391,26 @@ Rough cost: ~20,000 tokens (2 character sheets + 4 storyboard frames + 4 cinemat
 Ready to start with the character sheets?
 ```
 
-What this example teaches: **the storyboard pass is not optional overhead — it's the pre-flight check that prevents a 18,000-token reshoot.** Two character sheets cost less than 1,000 tokens combined. Four storyboard frames cost ~1,600. That ~2,600-token investment gates a ~17,000-token video commitment. The user gets to course-correct twice (after character sheets, after storyboard) before any video token is spent.
-
 ---
 
-Look at what every example has in common:
-- **A "twist" line** at the top — the non-obvious creative move that elevates the request
-- **An anchor strategy** — usually `image_refs` to keep identity/style locked across generations
-- **A medium-crossing move** — almost every flow ends in a different medium than where it started (image → video, 3D → video, photo → motion comic)
-- **A cost / turn count check-in** when the pipeline gets ambitious
-- **Concrete model picks** with reasoning, not vague "let's generate something"
-- **For multi-shot videos: a storyboard pass before any video generation** (Example 7) — character sheets → storyboard frames → videos. Cheap stills as a safety net before expensive video tokens.
+Three more worked examples (cartoon-character → comic → live-action, music video, motion comic) are in `references/examples.md`. Together they show the pattern: a "twist" line, an anchor strategy (usually `image_refs`), a medium-crossing move, concrete model picks with reasoning, and — for multi-shot video — a storyboard pass before any video generation.
 
-The next request you get will not match these. Don't try to map it onto Example N. Instead ask: *given this specific brief, what's the non-obvious move? What's the anchor? What media should we cross? If it's multi-shot, where are my approval gates?* Then invent.
+The next request will not match these. Don't try to map it onto Example N. Instead ask: *given this specific brief, what's the non-obvious move? What's the anchor? What media should we cross? If it's multi-shot, where are my approval gates?* Then invent.
 
 ## Uploading user-provided images into VAR2 — the tmpfile.link bridge
 
-VAR2 generation tools (`var2_create_image` with `image-to-image`, `var2_create_3d`, `var2_create_video` with `first_frame_url` or `reference_image_urls`) all require **publicly fetchable HTTPS URLs**. Images that the user uploaded into the chat, or images sitting on local disk (`/mnt/user-data/uploads/`, `/home/claude/`, anywhere else local), are NOT publicly fetchable — VAR2's backend can't reach them. Trying to pass a local path silently fails or errors out.
-
-**The bridge:** upload the local file to `tmpfile.link` first, get a temporary public URL, then pass that URL to VAR2.
-
-### When to use this
-
-- The user uploaded an image to the chat and wants it modified/animated/3D'd
-- An image is sitting locally (e.g. a frame extracted from video with `ffmpeg`, a downloaded reference, a file the user dropped in `/mnt/user-data/uploads/`)
-- Any time the input image is NOT already a `https://...` URL from a previous VAR2 generation
-
-### When NOT to use this
-
-- The image is already a VAR2-generated asset (use the existing supabase URL directly — it's already public)
-- The user gave you a URL that's already publicly reachable (e.g. a CDN link, a public Imgur/Cloudinary URL) — just pass it through
-
-### Where to find the local file first
-
-User-uploaded files in this environment live at `/mnt/user-data/uploads/`. Before uploading to tmpfile.link, find the file there:
+VAR2 generation tools require **publicly fetchable HTTPS URLs**. User-uploaded images and local files (`/mnt/user-data/uploads/...`, `/home/claude/...`) are NOT fetchable — VAR2's backend can't reach them. **The bridge:** upload to `tmpfile.link` first, then pass the returned URL to VAR2. Skip this when the input is already a public URL (a previous VAR2 asset, a CDN link).
 
 ```bash
-ls /mnt/user-data/uploads/
-```
-
-The filename is whatever the user named it. If the user just said "use my photo" without naming it, list the directory and pick the most recently modified image file — or ask them which one if multiple files are present.
-
-Other local paths you might encounter:
-- `/home/claude/` — files you yourself created or downloaded with bash/curl/ffmpeg
-- `/mnt/user-data/outputs/` — files prepared as deliverables for the user (rarely the source for VAR2, but possible)
-
-Anything under any of these paths is local-only and needs the tmpfile.link bridge before VAR2 can see it.
-
-### How to do it
-
-```bash
-curl -X POST https://tmpfile.link/api/upload \
-  -F "file=@/mnt/user-data/uploads/the_users_image.png"
-```
-
-Response is JSON with a `downloadLink` field. Use that URL as the `image_url` / `first_frame_url` / `image` / `reference_image_urls` parameter to VAR2.
-
-### Practical pattern
-
-```bash
-# Find the uploaded file
-ls /mnt/user-data/uploads/
-
-# Upload it, capture the public URL
 URL=$(curl -s -X POST https://tmpfile.link/api/upload \
   -F "file=@/mnt/user-data/uploads/photo.jpg" | jq -r '.downloadLink')
 
-echo "$URL"
-# Now pass $URL to var2_create_image, var2_create_3d, var2_create_video, etc.
+# Now pass $URL as image_url / first_frame_url / image / reference_image_urls to VAR2.
 ```
 
-Or in Python:
-```python
-import subprocess, json
+Constraints: anonymous uploads expire after 7 days (fine for a chat session, not for long-term); 100MB cap (only matters for `wan-2.7` video-to-video); no auth required.
 
-result = subprocess.run([
-    "curl", "-s", "-X", "POST",
-    "https://tmpfile.link/api/upload",
-    "-F", f"file=@/mnt/user-data/uploads/{filename}"
-], capture_output=True, text=True)
-public_url = json.loads(result.stdout)["downloadLink"]
-
-# Hand the URL to VAR2 — it can now fetch it
-var2_create_image(type="image-to-image", image_url=public_url, prompt="...")
-```
-
-### Constraints to remember
-
-- **Anonymous uploads expire after 7 days.** Fine for the duration of a single chat session, not for long-term reference. If the same image will be reused across many sessions, the user should host it themselves.
-- **100MB file size cap.** Generated frames and storyboard panels are nowhere near this. A long mp4 might approach it — if you're feeding a video into `wan-2.7`'s video-to-video, check the size first.
-- **No auth needed for anonymous use** — no API key, no signup. Just the curl command.
-
-### Why this matters for the orchestrator workflow
-
-When a user says "turn this photo of me into a 3D model" or "use this drawing as the first frame," the natural temptation is to start prompting VAR2 with the local path. That fails silently or returns a cryptic backend error. The tmpfile.link bridge is the missing first step — without it, VAR2 simply cannot see user-provided images. Do it once at the top of the pipeline, capture the public URL, then everything downstream works normally.
+For finding the local file, a Python alternative, and other local-path locations, see `references/media-inputs.md`.
 
 ## Building blocks — the VAR2 toolbox
 
@@ -618,48 +443,13 @@ When a user says "turn this photo of me into a 3D model" or "use this drawing as
 
 **`var2_list_models`** — when in doubt about a pick. Filter by `modality` (`image`/`video`/`audio`/`3d`/`modify`).
 
-## Pitfalls to remember
+## Pitfalls — the must-knows
 
-**Backgrounds before 3D.** Trellis-2 interprets every visible pixel as geometry. Run remove-bg even if the source looks clean.
+The full pitfalls catalog (Veo reference-to-video quirks, duration-type-per-model, aspect-ratio-per-family, idempotency, frozen-video prompts, and more) lives in `references/pitfalls.md`. The three that bite hardest:
 
-**Local files can't be passed directly to VAR2.** VAR2's backend fetches over HTTPS — local paths (`/mnt/user-data/uploads/...`, `/home/claude/...`) fail. Upload to `tmpfile.link` first (see "Uploading user-provided images into VAR2" above), then pass the returned `downloadLink` as the URL. This is the #1 reason a "use my photo" request blows up on the first VAR2 call.
-
-**image-to-video vs reference-to-video — and the question you MUST ask.** These look interchangeable but produce fundamentally different videos:
-
-- `image-to-video` — the image is the **literal first frame**. The model freely improvises everything after it. Good for: single-shot clips, one composition that moves, hero shots, ambient motion. Pass `first_frame_url` (one image).
-- `reference-to-video` — the images are **target compositions / identity anchors** that the video should pass through or honor visually. Good for: multi-beat storyboards where the video should hit each panel in sequence, character/style consistency across a sequence, narrative shorts. Pass `reference_image_urls` (array of up to ~9 on seedance).
-
-**Mandatory check before generating ANY video when references exist.** If the user has produced or referenced more than one image — a storyboard, a multi-panel sequence, a "scene A / scene B" plan, anything where the video is implicitly supposed to traverse multiple compositions — DO NOT pick the mode silently. Pause and ask explicitly which approach they want, with the tradeoffs spelled out in their language:
-
-- **Option A — One single shot, animated from one frame** (image-to-video). The video is one continuous moment built off that single first frame. Cheaper to reason about, but the model invents anything not in that frame. Picks any one panel as the starting frame and lets the rest be improvised.
-- **Option B — One stitched video that traverses all panels** (reference-to-video). The video tries to hit each panel as a beat in sequence. Better for storyboards and multi-beat shorts, since the model is anchored to the compositions you actually designed. Pass all panels as references and describe each beat in the prompt.
-- **Option C — Multiple short shots, one per panel, edited together later** (image-to-video × N). Each panel becomes its own short clip starting from that exact frame. Maximum fidelity per beat, but more tokens and the user has to stitch in an editor. Best when each panel deserves its own moment.
-
-Frame the question for what they're actually trying to make. Don't pick on their behalf. The default to lean toward when a storyboard exists is B (reference-to-video) over A (image-to-video) — but always confirm before spending video tokens, because the choice is irreversible once the job runs.
-
-**Veo's `reference-to-video` is finicky.** In practice, Veo's MCP signature for reference-to-video has rejected both `reference_image_urls` and `reference_images` parameter names in real runs (the error messages contradict each other). When you specifically need reference-anchored video with Veo and the call fails twice, **fall back to image-to-video** with the strongest single reference frame as `first_frame_url` and describe the other references in the prompt text. For true multi-reference video, `seedance-2` is more reliable (up to 9 image refs).
-
-**Character identity across generations.** Don't describe the character textually each time — `image_refs` beats prose. Generate one canonical character image, reuse its URL everywhere.
-
-**Video duration types vary by model.**
-- `kling*`, `grok-imagine` → STRING (`"5"`, `"10"`)
-- `ltx-2.3`, `seedance-2` → NUMBER
-
-Validation rejects the wrong type. When unsure, `var2_list_models` confirms.
-
-**Aspect ratios vary by family.**
-- `veo-3.1`, `sora-2` → `"portrait"` or `"landscape"`
-- `kling*`, `grok-imagine` → `"1:1"`, `"16:9"`, `"9:16"`
-
-**Upscale before videoing a generated image** for polish. Generated 1K often looks soft when moving. Topaz 2x takes ~5s and is cheap.
-
-**Don't poll-loop.** `var2_get_*_result` long-polls server-side (50s for images, ~5min for video/audio/3D). One call is usually enough. Only call again if it returns `state: waiting`.
-
-**Video prompts need motion and camera, not still-image prose.** The #1 reason a video clip comes back nearly frozen is a prompt written like an image prompt — "a woman standing in a kitchen, soft window light, photoreal." That describes a still, not a shot. Always include camera language ("slow dolly-in", "handheld follow", "static wide shot, character walks across frame") and one motion beat per few seconds. For `image-to-video`, the prompt should describe how the still *comes to life*, consistent with `first_frame_url`.
-
-**Idempotency on retries.** Reuse `idempotency_key` when retrying a flaky generation so VAR2 doesn't double-bill.
-
-**Suno + Hebrew.** Stick to English lyrics or instrumental. Suno can't pronounce Hebrew reliably.
+- **Always `remove-bg` before `var2_create_3d`.** Trellis bakes every visible pixel into geometry.
+- **Local files need the tmpfile.link bridge first.** VAR2's backend fetches over HTTPS; local paths fail silently. (#1 cause of first-call blowups on "use my photo" requests.)
+- **image-to-video ≠ reference-to-video. When ≥2 reference images exist, stop and ask the user which traversal mode they want** (one-shot animate, stitched traversal, or N clips edited together). The choice is irreversible once the job runs. See `references/pitfalls.md` for the full Option A/B/C framing.
 
 ## Webhooks (optional, advanced)
 
@@ -678,5 +468,7 @@ When picking models and unsure, the safe defaults are: `nano-banana-2` or `gpt-i
 These files add detail that doesn't fit inline. **On any conflict between a reference and this SKILL.md, this SKILL.md wins.**
 
 - `references/cost-and-tokens.md` — `var2_estimate_cost` input/output shape, when to estimate, how to report cost
-- `references/media-inputs.md` — exact parameter names and roles for image/video inputs across tools
+- `references/media-inputs.md` — image/video input parameter names and roles; finding local files; Python tmpfile.link pattern
 - `references/non-latin-text.md` — Hebrew/Arabic guidance for images, video, and Suno lyrics
+- `references/pitfalls.md` — full pitfalls catalog (Veo reference-to-video quirk, duration types, aspect ratios, idempotency, frozen video, mode-selection question, etc.)
+- `references/examples.md` — three more worked examples (cartoon-character → comic → live-action; music video; motion comic)

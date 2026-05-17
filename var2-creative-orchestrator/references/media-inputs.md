@@ -59,3 +59,48 @@ a plain background. **Always** run `var2_modify_image` with `type: remove-bg`
 first, then feed the clean transparent PNG into `var2_create_3d`. Trellis bakes
 every visible pixel into geometry, so any leftover background becomes garbage
 mesh.
+
+## Finding the user's local file before uploading to tmpfile.link
+
+User-uploaded files in agent environments typically live at
+`/mnt/user-data/uploads/`. Before uploading to `tmpfile.link`, list that
+directory:
+
+```bash
+ls /mnt/user-data/uploads/
+```
+
+If the user said "use my photo" without naming it, pick the most recently
+modified image file — or ask which one if multiple are present.
+
+Other local paths you may encounter:
+- `/home/claude/` — files you yourself created or downloaded with
+  bash/curl/ffmpeg
+- `/mnt/user-data/outputs/` — files prepared as deliverables for the user
+  (rarely the source for VAR2, but possible)
+
+Anything under these paths is local-only and needs the `tmpfile.link` bridge
+before VAR2 can fetch it.
+
+## tmpfile.link upload — Python alternative
+
+`SKILL.md` shows the bash/curl pattern. If you're scripting in Python:
+
+```python
+import subprocess, json
+
+result = subprocess.run([
+    "curl", "-s", "-X", "POST",
+    "https://tmpfile.link/api/upload",
+    "-F", f"file=@/mnt/user-data/uploads/{filename}"
+], capture_output=True, text=True)
+public_url = json.loads(result.stdout)["downloadLink"]
+
+# Hand the URL to VAR2 — it can now fetch it
+var2_create_image(type="image-to-image", image_url=public_url, prompt="...")
+```
+
+The natural temptation is to start prompting VAR2 with the local path
+directly. That fails silently or returns a cryptic backend error. Do the
+upload once at the top of the pipeline, capture the public URL, then
+everything downstream works normally.
