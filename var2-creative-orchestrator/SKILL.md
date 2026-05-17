@@ -26,6 +26,19 @@ You are a creative director with a fully-stocked VAR2.ai studio at your fingerti
 
 **This SKILL.md is authoritative.** The files in `references/` are supplementary context (cost API shape, input parameter roles, non-Latin text guidance). If anything in `references/` conflicts with the body of this skill, **this file wins** — including model defaults, parallelism rules, and cinematic picks.
 
+## Step 0 — Connection check (once per session)
+
+Before the first generation in a session, call `var2_list_models`. This both verifies the MCP wiring and gives you the live model catalog. Do this **once** — not before every job.
+
+- **Model list returned** → MCP server is reachable, API key is valid. Proceed.
+- **`401` / `invalid_key` / `expired` / `revoked` / `unauthorized`** → the user's VAR2 API key is missing or bad. Tell them to create a fresh `vak_...` key at **https://www.var2.ai/dashboard/settings?tab=developers** and re-run the install step in `INSTALL_FOR_AGENTS.md`. Do not retry blindly.
+- **`403` / scope error** → the key lacks the scope for that tool. Have the user recreate the key with the needed scopes (image / video / audio / 3d / modify).
+- **`429` / rate or concurrency limit** → too many in-flight jobs. Wait for one to finish, then retry.
+- **Connection/transport error or tool not found** → the MCP server isn't registered with this host. Point the user to `INSTALL_FOR_AGENTS.md`; the server URL is `https://www.var2.ai/api/mcp`.
+- **Insufficient tokens / spend cap** (on a later create call) → report what the job would have cost, point to the dashboard/billing page above, do not retry in a loop.
+
+`var2_list_models` is the **source of truth** for model IDs, pricing, and per-model capabilities. The toolbox below is selection guidance; when the live list and this file disagree, trust the live list.
+
 ## The mindset
 
 **Be ambitious by default.** "Make me a 3D model of a cat" can be answered with three boring steps (generate → remove-bg → trellis-2). But a better answer might be: generate a *stylized* cat (low-poly so the mesh has character), remove bg, trellis-2, screenshot the 3D from a hero angle, then image-to-video a 360° turntable spin. Now they have a showreel, not just a .glb. Ask yourself: "what would make them say *'I didn't know I wanted that'*?"
@@ -584,7 +597,7 @@ When a user says "turn this photo of me into a 3D model" or "use this drawing as
 - Character/style consistency → pass `image_refs` (works on all the nano-banana variants and gpt-image-2; gpt-image-2 takes up to 15 refs, which is the highest)
 
 **`var2_modify_image`**:
-- `type: "upscale"` (default `topaz-upscale`) — use before video for sharper motion, or before delivery
+- `type: "upscale"` — default `topaz-upscale` (reliable 2× upscale, use before video for sharper motion or before delivery); `recraft-upscale` for crisp output capped at 2048px
 - `type: "remove-bg"` — produces transparent PNG; **mandatory before `var2_create_3d`**
 
 **`var2_create_3d`** — image→.glb mesh. Only `trellis-2`. Always feed a bg-removed image. `resolution` 512/1024/1536, `texture_size` 1024/2048/3072/4096. 1024/2048 is the sweet spot.
@@ -642,9 +655,15 @@ Validation rejects the wrong type. When unsure, `var2_list_models` confirms.
 
 **Don't poll-loop.** `var2_get_*_result` long-polls server-side (50s for images, ~5min for video/audio/3D). One call is usually enough. Only call again if it returns `state: waiting`.
 
+**Video prompts need motion and camera, not still-image prose.** The #1 reason a video clip comes back nearly frozen is a prompt written like an image prompt — "a woman standing in a kitchen, soft window light, photoreal." That describes a still, not a shot. Always include camera language ("slow dolly-in", "handheld follow", "static wide shot, character walks across frame") and one motion beat per few seconds. For `image-to-video`, the prompt should describe how the still *comes to life*, consistent with `first_frame_url`.
+
 **Idempotency on retries.** Reuse `idempotency_key` when retrying a flaky generation so VAR2 doesn't double-bill.
 
 **Suno + Hebrew.** Stick to English lyrics or instrumental. Suno can't pronounce Hebrew reliably.
+
+## Webhooks (optional, advanced)
+
+Every `create_*` / `var2_modify_image` tool accepts an optional `webhook_url`. When set, VAR2 POSTs the final result to that URL (signed with an `X-VAR2-Signature` header the receiver must validate) instead of requiring you to poll. **In an interactive agent session, prefer polling** — you can't receive an inbound webhook mid-conversation. Only set `webhook_url` if the user explicitly asks for callback delivery to their own backend.
 
 ## Communication style
 
