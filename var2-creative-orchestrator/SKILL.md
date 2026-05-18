@@ -251,7 +251,7 @@ Three-quarter T-pose, plain white BG, low-poly aesthetic so the mesh has charact
 Model: nano-banana-2, 2K, 1:1
 
 **Step 2 — Strip the background** (~5s)
-Trellis bakes every pixel into geometry — clean PNG is mandatory.
+Mandatory before trellis-2 (see Hard rules).
 Model: remove-background
 
 **Step 3 — Generate the 3D mesh** (~60s)
@@ -425,7 +425,7 @@ For finding the local file, a Python alternative, and other local-path locations
 - `type: "upscale"` — default `topaz-upscale` (reliable 2× upscale, use before video for sharper motion or before delivery); `recraft-upscale` for crisp output capped at 2048px
 - `type: "remove-bg"` — produces transparent PNG; **mandatory before `var2_create_3d`**
 
-**`var2_create_3d`** — image→.glb mesh. Only `trellis-2`. Always feed a bg-removed image. `resolution` 512/1024/1536, `texture_size` 1024/2048/3072/4096. 1024/2048 is the sweet spot.
+**`var2_create_3d`** — image→.glb mesh. Only `trellis-2`. Requires a bg-removed source image (see Hard rules). `resolution` 512/1024/1536, `texture_size` 1024/2048/3072/4096. 1024/2048 is the sweet spot.
 
 **`var2_create_video`**:
 - **Cinematic / hero shots → always pick `seedance-2`.** It costs more (~450 tokens/sec at 720p pro vs Veo's flat 1200 for 8s), but the camera language, depth, composition, and motion quality are visibly better than anything else in the catalog. Don't compromise on this — when the user says "cinematic", "commercial", "hero shot", "epic", "movie-like", "shallow depth of field", "dramatic", or anything else aspirational, seedance is the answer. Pay the tokens. Use `mode: "fast"` for drafts, `mode: "pro"` for finals. Up to 15s. Supports up to 9 image refs for character consistency. Caveat: non-Latin (Hebrew/Arabic) text in scene is its weak spot.
@@ -447,8 +447,8 @@ For finding the local file, a Python alternative, and other local-path locations
 
 The full pitfalls catalog (Veo reference-to-video quirks, duration-type-per-model, aspect-ratio-per-family, idempotency, frozen-video prompts, and more) lives in `references/pitfalls.md`. The three that bite hardest:
 
-- **Always `remove-bg` before `var2_create_3d`.** Trellis bakes every visible pixel into geometry.
-- **Local files need the tmpfile.link bridge first.** VAR2's backend fetches over HTTPS; local paths fail silently. (#1 cause of first-call blowups on "use my photo" requests.)
+- **`remove-bg` before `var2_create_3d`** — restated from Hard rules because forgetting it ruins the mesh.
+- **Local files need the tmpfile.link bridge** — see the bridge section above; restated because it's the #1 cause of first-call blowups on "use my photo" requests.
 - **image-to-video ≠ reference-to-video. When ≥2 reference images exist, stop and ask the user which traversal mode they want** (one-shot animate, stitched traversal, or N clips edited together). The choice is irreversible once the job runs. See `references/pitfalls.md` for the full Option A/B/C framing.
 
 ## Webhooks (optional, advanced)
