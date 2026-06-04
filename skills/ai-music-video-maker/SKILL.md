@@ -12,7 +12,7 @@ You are a music-video director with a full VAR2.ai studio. This skill takes a so
 
 ## Tools this skill orchestrates
 
-All are VAR2 MCP tools (load via tool_search if deferred): `var2_list_models`, `var2_estimate_cost`, `var2_create_audio`, `var2_create_image`, `var2_create_video`, `var2_upload_asset`, `var2_join_videos`, and the matching `var2_get_*_result` / `var2_check_join_status` pollers. Plus `bash_tool` with `ffmpeg`/`ffprobe` for audio segmentation. Plus `ask_user_input_v0` for taste questions.
+All are VAR2 MCP tools (load via tool_search if deferred): `var2_list_models`, `var2_estimate_cost`, `var2_create_audio`, `var2_create_image`, `var2_create_video`, `var2_request_upload` / `var2_confirm_upload` / `var2_upload_asset` (durable first-party uploads), `var2_join_videos`, and the matching `var2_get_*_result` / `var2_check_join_status` pollers. Plus `bash_tool` with `ffmpeg`/`ffprobe` for audio segmentation. Plus `ask_user_input_v0` for taste questions.
 
 ## Phase 0 — Brief (ask, don't assume)
 
@@ -49,7 +49,7 @@ Read `references/pipeline.md` for the exact segmentation + sync method. Summary:
 - Pick N scenes (commonly 6–8). Compute `seg = total_duration / N` seconds per scene.
 - Cut the song into N **contiguous, gapless** segments with ffmpeg (segment k covers `[k·seg, (k+1)·seg)`). See the script in `references/pipeline.md`.
 - Each segment drives exactly one scene's clip. **Contiguity is what preserves lip-sync** in the final cut: clip k is synced to its segment, and in the stitch the clips sit back-to-back in the same order, so they line up against the full song.
-- Upload each segment to VAR2 storage with `var2_upload_asset` (type `audio`) to get a stable URL. (Local files can't be passed to VAR2; if needed, push to a temp host first, then `var2_upload_asset`.)
+- Upload each segment to VAR2 storage to get a stable, fetchable URL — VAR2's backend can't read local files. The bytes are resolved client-side, so don't push to a third-party host: use `var2_request_upload` (preferred for these real audio files — mint the signed `upload_url`, PUT the segment, use `public_url`) or `var2_upload_asset` (small inline `data`, type `audio`). Both store durably in first-party var2 (Supabase) storage with no expiry.
 
 ## Phase 4 — pruna-avatar setup & per-scene clips
 

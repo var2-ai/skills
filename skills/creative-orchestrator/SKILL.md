@@ -476,86 +476,43 @@ Look at what every example has in common:
 
 The next request you get will not match these. Don't try to map it onto Example N. Instead ask: *given this specific brief, what's the non-obvious move? What's the anchor? What media should we cross? If it's multi-shot, where are my approval gates?* Then invent.
 
-## Uploading user-provided images into VAR2 — the tmpfile.link bridge
+## Uploading user-provided images into VAR2 — the durable upload tools
 
-VAR2 generation tools (`var2_create_image` with `image-to-image`, `var2_create_3d`, `var2_create_video` with `first_frame_url` or `reference_image_urls`) all require **publicly fetchable HTTPS URLs**. Images that the user uploaded into the chat, or images sitting on local disk (`/mnt/user-data/uploads/`, `/home/claude/`, anywhere else local), are NOT publicly fetchable — VAR2's backend can't reach them. Trying to pass a local path silently fails or errors out.
+VAR2 generation tools (`var2_create_image` with `image-to-image`, `var2_create_3d`, `var2_create_video` with `first_frame_url` or `reference_image_urls`) all require a **storage URL VAR2's backend can fetch over HTTPS**. A file the user attached to the chat, or a file sitting on local disk, is NOT something VAR2 can reach — passing a local path silently fails or errors out.
 
-**The bridge:** upload the local file to `tmpfile.link` first, get a temporary public URL, then pass that URL to VAR2.
+**The bridge is built into VAR2 itself.** Don't reach for a third-party temp host — VAR2 has dedicated upload tools that store the bytes **durably in first-party var2 (Supabase) storage** and hand back a public URL with **no expiry**. There are three paths, all landing a durable var2 URL:
 
-### When to use this
+| You have… | Tool | Result |
+|---|---|---|
+| a real / large local file or attachment (and the client can do an HTTP PUT) | `var2_request_upload` → PUT the bytes to the returned `upload_url` → use `public_url` | durable var2 URL, no expiry — **preferred for real files** |
+| a small file (≤1 MB) and no way to PUT | `var2_upload_asset` with base64 `data` | durable var2 URL + `placeholder_id` |
+| a third-party / temp URL to pull in (imgur, dropbox, drive, CDN, a tweet) | `var2_upload_asset` with `url` | downloaded + stored durably in var2 storage |
 
-- The user uploaded an image to the chat and wants it modified/animated/3D'd
-- An image is sitting locally (e.g. a frame extracted from video with `ffmpeg`, a downloaded reference, a file the user dropped in `/mnt/user-data/uploads/`)
-- Any time the input image is NOT already a `https://...` URL from a previous VAR2 generation
+In every case: **upload FIRST, then pass the returned `public_url` / `url` verbatim** as `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url` to the next tool.
 
-### When NOT to use this
+### When to upload
 
-- The image is already a VAR2-generated asset (use the existing supabase URL directly — it's already public)
-- The user gave you a URL that's already publicly reachable (e.g. a CDN link, a public Imgur/Cloudinary URL) — just pass it through
+- The user attached/uploaded an image to the chat and wants it modified/animated/3D'd ("this image", "my logo", "the photo I just sent")
+- A file is sitting locally (a frame you extracted with `ffmpeg`, a downloaded reference, an audio segment you cut)
+- The user pasted a third-party URL **and explicitly asked to "import" / "pull into var2"**
 
-### Where to find the local file first
+### When NOT to upload
 
-User-uploaded files in this environment live at `/mnt/user-data/uploads/`. Before uploading to tmpfile.link, find the file there:
+- The asset is already a VAR2 asset — a `var2.ai` / `api.var2.ai` / `*.supabase.co` URL, or you have a `placeholder_id`. It's already fetchable; pass it straight through, never re-upload.
+- The user pasted a public third-party URL and asked for an **end action** (animate/upscale/3D) without saying "import" — pass that URL directly to the create/modify tool; VAR2 fetches it.
+- It's a text-only request with no URL and no local-file wording — there's nothing to upload; pick a generator.
 
-```bash
-ls /mnt/user-data/uploads/
-```
+### Important: the client resolves paths to bytes, not you
 
-The filename is whatever the user named it. If the user just said "use my photo" without naming it, list the directory and pick the most recently modified image file — or ask them which one if multiple files are present.
+Remote MCP **cannot read the client filesystem or chat attachments**. You never `ls` a local directory or `curl` a file yourself — file paths and native attachments are resolved to bytes on the client side and fed into the upload tools. So don't write shell to find or push files; just call `var2_request_upload` / `var2_upload_asset` and let VAR2's client handle the bytes. Never fabricate a URL to satisfy a tool argument (no `example.com`, `local_file_url`, `path_to_*`, `/uploads/*`, `attachment://*`, `data:*`).
 
-Other local paths you might encounter:
-- `/home/claude/` — files you yourself created or downloaded with bash/curl/ffmpeg
-- `/mnt/user-data/outputs/` — files prepared as deliverables for the user (rarely the source for VAR2, but possible)
+### Optionally confirm a signed upload
 
-Anything under any of these paths is local-only and needs the tmpfile.link bridge before VAR2 can see it.
-
-### How to do it
-
-```bash
-curl -X POST https://tmpfile.link/api/upload \
-  -F "file=@/mnt/user-data/uploads/the_users_image.png"
-```
-
-Response is JSON with a `downloadLink` field. Use that URL as the `image_url` / `first_frame_url` / `image` / `reference_image_urls` parameter to VAR2.
-
-### Practical pattern
-
-```bash
-# Find the uploaded file
-ls /mnt/user-data/uploads/
-
-# Upload it, capture the public URL
-URL=$(curl -s -X POST https://tmpfile.link/api/upload \
-  -F "file=@/mnt/user-data/uploads/photo.jpg" | jq -r '.downloadLink')
-
-echo "$URL"
-# Now pass $URL to var2_create_image, var2_create_3d, var2_create_video, etc.
-```
-
-Or in Python:
-```python
-import subprocess, json
-
-result = subprocess.run([
-    "curl", "-s", "-X", "POST",
-    "https://tmpfile.link/api/upload",
-    "-F", f"file=@/mnt/user-data/uploads/{filename}"
-], capture_output=True, text=True)
-public_url = json.loads(result.stdout)["downloadLink"]
-
-# Hand the URL to VAR2 — it can now fetch it
-var2_create_image(type="image-to-image", image_url=public_url, prompt="...")
-```
-
-### Constraints to remember
-
-- **Anonymous uploads expire after 7 days.** Fine for the duration of a single chat session, not for long-term reference. If the same image will be reused across many sessions, the user should host it themselves.
-- **100MB file size cap.** Generated frames and storyboard panels are nowhere near this. A long mp4 might approach it — if you're feeding a video into `wan-2.7`'s video-to-video, check the size first.
-- **No auth needed for anonymous use** — no API key, no signup. Just the curl command.
+After a `var2_request_upload` PUT, you may call `var2_confirm_upload` (`path` + `type`) to validate the bytes actually landed and get a `placeholder_id` for `var2_join_videos` chaining. Useful when the upload feeds a multi-clip stitch.
 
 ### Why this matters for the orchestrator workflow
 
-When a user says "turn this photo of me into a 3D model" or "use this drawing as the first frame," the natural temptation is to start prompting VAR2 with the local path. That fails silently or returns a cryptic backend error. The tmpfile.link bridge is the missing first step — without it, VAR2 simply cannot see user-provided images. Do it once at the top of the pipeline, capture the public URL, then everything downstream works normally.
+When a user says "turn this photo of me into a 3D model" or "use this drawing as the first frame," the natural temptation is to start prompting VAR2 with the local path. That fails silently or returns a cryptic backend error. The upload tools are the missing first step — call one at the top of the pipeline, capture the durable `public_url` / `url`, then everything downstream works normally. Because the URL is first-party and never expires, the same asset is safe to reuse across sessions too.
 
 ## Building blocks — the VAR2 toolbox
 
@@ -592,7 +549,7 @@ When a user says "turn this photo of me into a 3D model" or "use this drawing as
 
 **Backgrounds before 3D.** Trellis-2 interprets every visible pixel as geometry. Run remove-bg even if the source looks clean.
 
-**Local files can't be passed directly to VAR2.** VAR2's backend fetches over HTTPS — local paths (`/mnt/user-data/uploads/...`, `/home/claude/...`) fail. Upload to `tmpfile.link` first (see "Uploading user-provided images into VAR2" above), then pass the returned `downloadLink` as the URL. This is the #1 reason a "use my photo" request blows up on the first VAR2 call.
+**Local files can't be passed directly to VAR2.** VAR2's backend only fetches over HTTPS — a local path or chat attachment isn't reachable. Upload it first with `var2_request_upload` (real/large files) or `var2_upload_asset` (small inline / third-party `url`) — see "Uploading user-provided images into VAR2" above — then pass the returned durable `public_url` / `url`. This is the #1 reason a "use my photo" request blows up on the first VAR2 call.
 
 **image-to-video vs reference-to-video — and the question you MUST ask.** These look interchangeable but produce fundamentally different videos:
 
