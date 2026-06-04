@@ -23,15 +23,21 @@ Neither upload tool is right when:
 - the URL is on var2.ai / api.var2.ai / *.supabase.co (already var2-hosted);
 - there is no URL **and** no "attached / uploaded / local" wording (the request is text-only — pick a generator or reply null).
 
-**Getting a local/attached file into var2 (canonical):** var2 can't read your filesystem or attachments — turn the file into bytes on YOUR side, then pick:
+**STOP — a local path is NEVER a valid tool argument.** If the value you would pass for `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url` / `image` is a filesystem path or attachment — anything like `./logo.png`, `logo.png`, `/Users/me/pic.jpg`, `/mnt/.../x.png`, `C:\photo.png`, `file://…`, or a chat-attachment handle — DO NOT pass it. var2's backend cannot read your disk; the call fails. You MUST upload the bytes first and pass the returned var2 URL instead. (The MCP boundary rejects path-like values with an upload-first error, so a raw path just wastes a turn.)
+
+**The upload procedure (do this BEFORE the create/modify/animate/3d call):**
+1. Read the file's raw bytes on YOUR side (you have the file; var2 does not).
+2. **≤1 MB →** base64-encode the bytes yourself and call `var2_upload_asset({ type, data: "<base64>", content_type })`. Use the returned `url`.
+   **>1 MB (or you can run an HTTP PUT) →** call `var2_request_upload({ filename, type })`, PUT the raw bytes to the returned `upload_url`, then use the returned `public_url`.
+3. Pass that `url` / `public_url` verbatim as the next tool's `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url`.
 
 | You have… | Use | Result |
 |---|---|---|
-| a local path (relative/absolute) or an attachment you can read, AND can run an HTTP PUT | `var2_request_upload` → PUT the bytes to `upload_url` → use `public_url` | **durable** first-party var2 URL (no expiry) |
-| a small file (≤1 MB) but no shell to PUT with | `var2_upload_asset` with base64 `data` | durable var2 URL + `placeholder_id` |
+| a local path (relative/absolute) or an attachment, AND can run an HTTP PUT | `var2_request_upload` → PUT bytes to `upload_url` → use `public_url` | **durable** first-party var2 URL (no expiry) — preferred for real files |
+| a small file (≤1 MB) | `var2_upload_asset` with base64 `data` | durable var2 URL + `placeholder_id` |
 | a third-party / temp URL to pull in | `var2_upload_asset` with `url` | downloaded + stored durably in var2 (Supabase) storage — first-party, no expiry |
 
-In every case: upload FIRST, then pass the returned `public_url` / `url` verbatim as `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url`. All three paths land DURABLE first-party var2 (Supabase) URLs — no third party, no expiry. Prefer `var2_request_upload` for real local files (lets the client PUT large bytes out-of-band); use the `var2_upload_asset` `url` path to pull in third-party links, or its `data` arg for small inline bytes. File paths and native attachments are resolved to bytes by YOU (the client) — never send a raw path to a tool argument. After a `var2_request_upload` PUT, optionally call `var2_confirm_upload` (`path` + `type`) to validate the bytes and get a `placeholder_id` for join_videos chaining.
+All three paths land DURABLE first-party var2 (Supabase) URLs — no third party, no expiry. File paths and native attachments are resolved to bytes by YOU (the client); never send a raw path to a tool argument. After a `var2_request_upload` PUT, optionally call `var2_confirm_upload` (`path` + `type`) to validate the bytes and get a `placeholder_id` for join_videos chaining.
 
 Never fabricate URLs to satisfy a tool argument. Specifically never invent: example.com, abc123, placeholder.X, local_file_url, path_to_*, /uploads/*, attachment://*, data:*.
 
