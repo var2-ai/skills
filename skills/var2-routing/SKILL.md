@@ -13,17 +13,25 @@ var2 fetches https URLs and resolves placeholder_ids. It cannot read attachments
 
 | Situation | Action |
 |---|---|
-| User attached / uploaded / "from my phone" / "this image" / "my logo" / "I just sent" — and gave NO https URL | `var2_upload_asset` first, then chain |
-| Third-party URL (litterbox.catbox.moe / 0x0.st / dropbox / drive / CDN / tweet) + user asks "pull into var2" / "import" | `var2_upload_asset` |
+| User attached / uploaded / "from my phone" / "this image" / "my logo" / "I just sent" — and gave NO https URL | `var2_request_upload` (durable) — or `var2_upload_asset` — first, then chain |
+| Third-party URL (imgur / 0x0.st / dropbox / drive / CDN / tweet) + user asks "pull into var2" / "import" | `var2_upload_asset` (`url`) |
 | Third-party URL + user asks for an end action (upscale / animate / remove-bg / 3d / join) without saying "import" | call the create/modify/join tool with that URL directly |
 | var2.ai / supabase.co URL, or a placeholder_id | call the create/modify/join tool directly — never re-upload |
 
-`var2_upload_asset` is **never** the right tool when:
+Neither upload tool is right when:
 - the user already has a placeholder_id (the asset exists — poll or chain into create/modify);
 - the URL is on var2.ai / api.var2.ai / *.supabase.co (already var2-hosted);
 - there is no URL **and** no "attached / uploaded / local" wording (the request is text-only — pick a generator or reply null).
 
-**Rehost pattern (canonical):** `var2_upload_asset` rehosts the bytes to Litterbox and returns a `url` — a TEMPORARY public https link (expires after 72h; configurable via LITTERBOX_EXPIRY). Pass that `url` verbatim into the next tool's `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url`. Upload first, THEN pass the returned URL. Because the link expires, long-running projects must re-upload when it lapses; if Litterbox is down the tool falls back to durable var2 storage automatically — either way use the returned `url`.
+**Getting a local/attached file into var2 (canonical):** var2 can't read your filesystem or attachments — turn the file into bytes on YOUR side, then pick:
+
+| You have… | Use | Result |
+|---|---|---|
+| a local path (relative/absolute) or an attachment you can read, AND can run an HTTP PUT | `var2_request_upload` → PUT the bytes to `upload_url` → use `public_url` | **durable** first-party var2 URL (no expiry) |
+| a small file (≤1 MB) but no shell to PUT with | `var2_upload_asset` with base64 `data` | durable var2 URL + `placeholder_id` |
+| a third-party / temp URL to pull in | `var2_upload_asset` with `url` | downloaded + stored durably in var2 (Supabase) storage — first-party, no expiry |
+
+In every case: upload FIRST, then pass the returned `public_url` / `url` verbatim as `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url`. All three paths land DURABLE first-party var2 (Supabase) URLs — no third party, no expiry. Prefer `var2_request_upload` for real local files (lets the client PUT large bytes out-of-band); use the `var2_upload_asset` `url` path to pull in third-party links, or its `data` arg for small inline bytes. File paths and native attachments are resolved to bytes by YOU (the client) — never send a raw path to a tool argument. After a `var2_request_upload` PUT, optionally call `var2_confirm_upload` (`path` + `type`) to validate the bytes and get a `placeholder_id` for join_videos chaining.
 
 Never fabricate URLs to satisfy a tool argument. Specifically never invent: example.com, abc123, placeholder.X, local_file_url, path_to_*, /uploads/*, attachment://*, data:*.
 
