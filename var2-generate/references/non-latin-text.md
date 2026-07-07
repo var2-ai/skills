@@ -14,8 +14,9 @@ Render reliable Hebrew/Arabic text with:
 3. **`gpt-image-2`** — strong prompt adherence with acceptable Hebrew/Arabic;
    good for design/layout-heavy briefs.
 
-Avoid for Hebrew/Arabic captions: `flux-2`, `flux-flex`, `z-image` — they
-mangle non-Latin glyphs.
+Avoid for Hebrew/Arabic captions: `flux-2`, `flux-flex`, `z-image`, and the
+whole cheap 4-step tier (`z-image-turbo`, `flux-schnell`, `flux-2-klein`) —
+they mangle non-Latin glyphs.
 
 Tips:
 - Quote the exact string in the prompt: `the Hebrew text "פתוח 24 שעות"`.
@@ -28,15 +29,27 @@ Tips:
 
 You can write the descriptive prompt itself in Hebrew/Arabic for
 `nano-banana-pro`, `nano-banana-2`, `gpt-image-2`, and for `veo-3.1` /
-`ltx-2.3` video. If results are weak, keep the *quoted on-image text* in the
-target language but write the surrounding scene description in English — the
-visible glyphs are what matter.
+`ltx-2.3` / `wan-2.7` video. If results are weak, keep the *quoted on-image
+text* in the target language but write the surrounding scene description in
+English — the visible glyphs are what matter.
 
 ## Video
 
-`veo-3.1` and `ltx-2.3` handle non-Latin prompts best. On-screen text in video
-is less reliable than in images across all models — set expectations and keep
-any required on-screen text minimal.
+`veo-3.1`, `ltx-2.3`, and `wan-2.7` handle non-Latin prompts and narration
+best; `seedance-2` and the kling family are weak on Hebrew/Arabic in scene.
+On-screen text in video is less reliable than in images across all models —
+set expectations and keep any required on-screen text minimal.
+
+## Speech / TTS (`var2_create_dialog`)
+
+- Set `language_code` explicitly (e.g. `"he"`, `"ar"`) — don't rely on
+  auto-detect for short texts.
+- **Hebrew: add niqqud (vowel points) to the text.** Unpointed Hebrew is
+  ambiguous to TTS; niqqud measurably improves pronunciation. Add it yourself
+  when the user gives unpointed text.
+- Filter `var2_get_voice_list` with `language: "he"` (or `"ar"`) to get voices
+  **verified** for the language — an unverified voice may read the text with a
+  heavy foreign accent.
 
 ## Music (Suno)
 
@@ -44,8 +57,11 @@ Suno is **English-strong**; Hebrew/Arabic lyrics are unreliable and often
 phonetically wrong. Options, in order:
 1. Instrumental (`instrumental: true`) — sidesteps the problem entirely.
 2. English lyrics with the requested mood/style.
-3. If the user insists on Hebrew/Arabic lyrics, set the expectation that
-   pronunciation may be off before generating.
+3. If the user insists on Hebrew/Arabic lyrics: use `customMode: true` with
+   the full lyrics in `prompt`, **add niqqud to Hebrew lyrics** (it improves
+   Suno's syllable accuracy noticeably), keep structure tags like `[Verse 1]`
+   / `[Chorus]`, and set the expectation that pronunciation may still be off
+   before generating.
 
 ## Replying to the user
 

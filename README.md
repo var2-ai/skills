@@ -28,20 +28,30 @@ Full instructions: [`INSTALL.md`](INSTALL.md). Agents: see
 
 ## Skills
 
-| Skill | Invoke | What it does |
-|---|---|---|
-| `var2-generate` | `/var2:generate` | Image / video / music / 3D generation and editing, upscale & background-removal, model selection, cost estimation, polling, Hebrew/Arabic text guidance. |
+| Skill | What it does |
+|---|---|
+| `var2-generate` | The core skill: image / video / music / voice-over / 3D generation and editing, uploads, upscale & background-removal, model selection, cost estimation, polling, stitching & timelines, character consistency, Hebrew/Arabic text guidance. |
+| `var2-routing` | Fast dispatch rules — which var2 tool to call when a prompt could map to several (upload vs. generate, create vs. status, music vs. TTS). |
+| `ai-music-video-maker` | End-to-end music video: Suno song → consistent on-model singer → lip-synced per-section clips (`pruna-avatar`) → one stitched final cut. |
+| `creative-orchestrator` | Decomposes an open-ended creative brief into a custom multi-step VAR2 pipeline (character sheets, storyboards, approval gates) and executes it. |
 
 ## What's covered
 
 - **Image** — text-to-image and image-to-image across the VAR2 model lineup
   (default `nano-banana-pro`), with best-in-class Hebrew/Arabic on-image text.
-- **Video** — text/image/reference/video-to-video (default `veo-3.1`),
+- **Video** — text/image/reference/video-to-video plus lip-synced talking
+  heads (default `veo-3.1`; `seedance-2` cinematic; `pruna-avatar` avatar),
   multi-shot narratives, native-audio models.
 - **Music** — Suno (`create` / `extend` / `replace-section`), instrumental or
-  vocal.
-- **3D** — image-to-3D textured GLB meshes (`trellis-2`).
-- **Modify** — upscale and background removal.
+  vocal, custom-lyrics mode.
+- **Speech** — TTS voice-overs and multi-speaker dialog (ElevenLabs voices,
+  browsable catalog).
+- **3D** — image-to-3D textured GLB meshes (`trellis-2`, `tripo`).
+- **Modify & compose** — upscale, background removal, audio trim/split,
+  video stitching with dry-run plans, precise multi-track timelines with
+  captions.
+- **Assets** — durable uploads of local/attached files into VAR2 storage;
+  saved character/product sheets for cross-session consistency.
 - **Cost** — token estimation before every non-trivial job.
 
 Model IDs, capabilities, and pricing are always read live from

@@ -1,6 +1,18 @@
 ---
-name: var2-creative-orchestrator
-description: Decompose any creative idea into a multi-step VAR2.ai MCP pipeline and execute it end-to-end. Use this skill whenever the user has a creative goal that involves generating images, videos, music, or 3D models — for example "make a video ad for X", "I want a 3D model of Y", "create a music video", "turn this photo into Z", "make a character and put them in a scene", or anything else where the answer is "build a custom multi-step pipeline." Trigger this skill any time the user says "make me a…" / "create a…" / "turn X into Y" / "I want a [creative artifact]" and the result would involve more than one VAR2 generation, even if the user doesn't explicitly mention pipelines. The job is to invent a clever, ambitious sequence tailored to that exact request — not to apply a template — and then walk the user through executing it step by step.
+name: creative-orchestrator
+version: 0.3.0
+description: >-
+  Decompose any creative idea into a multi-step VAR2.ai MCP pipeline and
+  execute it end-to-end. Use when the user has a creative goal that involves
+  generating images, videos, music, or 3D models and the result would involve
+  more than one VAR2 generation — "make a video ad for X", "I want a 3D model
+  of Y", "create a music video", "turn this photo into Z", "make a character
+  and put them in a scene", or any "make me a… / turn X into Y" request, even
+  if the user doesn't mention pipelines. The job is to invent a clever,
+  ambitious sequence tailored to that exact request — not to apply a template
+  — and walk the user through executing it step by step. NOT for a single
+  quick generation with no chaining (use var2-generate directly), and not
+  without the VAR2 MCP server connected.
 ---
 
 # VAR2 Creative Orchestrator
@@ -342,8 +354,8 @@ Model: nano-banana-2 with image_refs (or gpt-image-2 for more complex layouts)
 Image-to-video on each frame; pick durations that match the song's section lengths.
 Model: ltx-2.3 (per-second pricing, ideal for matching exact beats) or seedance-2
 
-**Step 5 — Hand off a cut sheet**
-Plain text: "0:00–0:08 intro clip, 0:08–0:24 hook clip, 0:24–0:40 outro clip + your song." User imports into any editor.
+**Step 5 — Stitch the final cut** (~15min render)
+var2_join_videos: the three clips in order, muted, with the full track as background audio — one finished mp4, no external editor needed. (dry_run plan → your approval → render.)
 
 Rough cost: depends heavily on clip lengths since ltx-2.3 is per-second. I'll run estimate_cost once we lock the durations.
 
@@ -527,7 +539,7 @@ When a user says "turn this photo of me into a 3D model" or "use this drawing as
 - `type: "upscale"` (default `topaz-upscale`) — use before video for sharper motion, or before delivery
 - `type: "remove-bg"` — produces transparent PNG; **mandatory before `var2_create_3d`**
 
-**`var2_create_3d`** — image→.glb mesh. Only `trellis-2`. Always feed a bg-removed image. `resolution` 512/1024/1536, `texture_size` 1024/2048/3072/4096. 1024/2048 is the sweet spot.
+**`var2_create_3d`** — image→.glb mesh. `trellis-2` (default, best price) or `tripo` (high-fidelity, PBR materials, ~3× the cost — for "production quality" asks). Always feed a bg-removed image. `resolution` 512/1024/1536, `texture_size` 1024/2048/3072/4096. 1024/2048 is the sweet spot.
 
 **`var2_create_video`**:
 - **Cinematic / hero shots → always pick `seedance-2`.** It costs more (~450 tokens/sec at 720p pro vs Veo's flat 1200 for 8s), but the camera language, depth, composition, and motion quality are visibly better than anything else in the catalog. Don't compromise on this — when the user says "cinematic", "commercial", "hero shot", "epic", "movie-like", "shallow depth of field", "dramatic", or anything else aspirational, seedance is the answer. Pay the tokens. Use `mode: "fast"` for drafts, `mode: "pro"` for finals. Up to 15s. Supports up to 9 image refs for character consistency. **Native audio supported: seedance-2 generates synchronized audio including voice-over, dialogue, sound effects, and ambient sound when described in the prompt.** Specify the speaker's voice (e.g. "deep male narrator", "energetic female voice"), the exact dialogue/VO lines, and any SFX directly in the prompt — seedance will produce them. English voice-over is the strongest; non-Latin (Hebrew/Arabic) text and speech in scene are its weak spots.
@@ -539,9 +551,17 @@ When a user says "turn this photo of me into a 3D model" or "use this drawing as
 - `wan-2.7` — 1080p, only model with proper video-to-video editing (`source_video_url`)
 - Types: `text-to-video` (default), `image-to-video` (`first_frame_url`), `reference-to-video` (`reference_image_urls` array), `video-to-video` (wan only)
 
-**`var2_create_audio`** — `suno` only. One call returns 2 variations. Hebrew lyrics are unreliable — go English or instrumental. Types: `create-music` (default), `extend-music`, `replace-music-section`.
+**`var2_create_audio`** — `suno` only. One call returns 2 variations. Hebrew lyrics are unreliable — go English or instrumental (custom mode + niqqud if the user insists). Types: `create-music` (default), `extend-music`, `replace-music-section`.
 
-**`var2_estimate_cost`** — dry-run pricing for a batch. Use it before any 3+ step pipeline or anything with video/audio.
+**`var2_create_dialog`** — voice-over / narration / multi-speaker dialog (TTS). Pick voices with `var2_get_voice_list`; poll `var2_get_dialog_result`. Pairs with `pruna-avatar` (`type: audio-to-video`) for talking-head clips.
+
+**`var2_trim_audio`** — cut/split an existing track by time (single range, batch segments, or smart lyrics split that never cuts mid-word). Segments come back as durable var2 assets — the bridge between one song and N lip-synced scene clips.
+
+**`var2_join_videos` / `var2_render_timeline`** — the finish line. `join_videos` stitches clips/images/audio back-to-back into one mp4 (always `dry_run: true` first → user approval → render with `{plan_id}`; poll `var2_check_join_status`). `render_timeline` is the precision tool: multi-track, overlaps, text/caption overlays, per-clip fades. Deliver a finished cut when you can, not just a cut sheet.
+
+**`var2_save_character` / `var2_get_character`** — persist a character/product/style sheet by name across sessions. When a user mentions a saved name, fetch it first — never regenerate from prose.
+
+**`var2_estimate_cost`** — dry-run pricing for a batch (supports `quantity`). Use it before any 3+ step pipeline or anything with video/audio.
 
 **`var2_list_models`** — when in doubt about a pick. Filter by `modality` (`image`/`video`/`audio`/`3d`/`modify`).
 
@@ -588,7 +608,7 @@ Validation rejects the wrong type. When unsure, `var2_list_models` confirms.
 
 ## Communication style
 
-Short and direct. The user (Israeli, likely typing Hebrew) doesn't want walls of prose between steps. Bullet points and structure for plans; two-line check-ins between steps ("step 3 ✓ — moving to step 4: removing background. Ready?"). Save the longer wrap-ups for final delivery.
+Short and direct — no walls of prose between steps, and always in the user's own language (Hebrew in, Hebrew out; model IDs and params stay English). Bullet points and structure for plans; two-line check-ins between steps ("step 3 ✓ — moving to step 4: removing background. Ready?"). Save the longer wrap-ups for final delivery.
 
 When something fails, surface VAR2's error message verbatim — it's precise and tells the user exactly what to fix. Don't paraphrase.
 

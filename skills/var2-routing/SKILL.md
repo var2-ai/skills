@@ -1,11 +1,16 @@
 ---
 name: var2-routing
-description: Dispatch rules for the var2 MCP connector — which tool to call for image / video / audio / 3D / asset-import requests. Use when the user prompt could map to multiple var2 tools.
+version: 0.3.0
+description: >-
+  Dispatch rules for the VAR2 MCP server — which var2 tool to call for image /
+  video / audio / voice / 3D / upload / stitch / status requests. Use when a
+  user prompt could map to multiple var2 tools (upload vs. generate, create
+  vs. status poll, music vs. TTS, join vs. timeline) and you need the routing
+  decided fast. NOT for learning how to run the tools end-to-end (that is
+  var2-generate) and not for use without the VAR2 MCP server connected.
 ---
 
 # VAR2.ai routing
-
-> Mirrors `ROUTING_INSTRUCTIONS` in `api/mcp-experimental.ts`. Edit both together.
 
 ## Assets
 
@@ -23,7 +28,7 @@ Neither upload tool is right when:
 - the URL is on var2.ai / api.var2.ai / *.supabase.co (already var2-hosted);
 - there is no URL **and** no "attached / uploaded / local" wording (the request is text-only — pick a generator or reply null).
 
-**STOP — a local path is NEVER a valid tool argument.** If the value you would pass for `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url` / `image` is a filesystem path or attachment — anything like `./logo.png`, `logo.png`, `/Users/me/pic.jpg`, `/mnt/.../x.png`, `C:\photo.png`, `file://…`, or a chat-attachment handle — DO NOT pass it. var2's backend cannot read your disk; the call fails. You MUST upload the bytes first and pass the returned var2 URL instead. (The MCP boundary rejects path-like values with an upload-first error, so a raw path just wastes a turn.)
+**STOP — a local path is NEVER a valid tool argument.** If the value you would pass for `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url` / `image` is a filesystem path or attachment — anything like `./logo.png`, `logo.png`, `/Users/me/pic.jpg`, `/mnt/data/x.png`, `C:\photo.png`, `file://…`, or a chat-attachment handle — DO NOT pass it. var2's backend cannot read your disk; the call fails. You MUST upload the bytes first and pass the returned var2 URL instead. (The MCP boundary rejects path-like values with an upload-first error, so a raw path just wastes a turn.)
 
 **The upload procedure (do this BEFORE the create/modify/animate/3d call):**
 1. Read the file's raw bytes on YOUR side (you have the file; var2 does not).
@@ -54,7 +59,12 @@ Never fabricate URLs to satisfy a tool argument. Specifically never invent: exam
 | 3D without image source ("a kitten in 3d") | `var2_create_image` then `var2_create_3d` |
 | Song / music / extend track / "replace seconds X-Y" | `var2_create_audio` |
 | Voice-over / narrate / TTS | `var2_create_dialog` |
-| Stitch / join / merge / timeline | `var2_join_videos` |
+| Cut / split / trim a track by time ("first 45s", "split into pieces") | `var2_trim_audio` |
+| Stitch / join / merge clips back-to-back | `var2_join_videos` (dry_run first) |
+| Precise timeline / overlaps / captions / text overlays | `var2_render_timeline` |
+| "Save this character / product as X" | `var2_save_character` |
+| "Use my saved character X" / "which characters do I have" | `var2_get_character` (fetch FIRST, never regenerate) |
+| "Show / line up / compare these" + 2+ ids/links | `var2_get_results` |
 
 `type: "image-to-video"` does not exist on var2_create_image — that's a video type, use var2_create_video.
 
@@ -62,8 +72,8 @@ Never fabricate URLs to satisfy a tool argument. Specifically never invent: exam
 
 - prompt only → `text-to-video`
 - prompt + 1 image → `image-to-video` (`first_frame_url`; grok-imagine uses `reference_image_url`)
-- prompt + N images → `reference-to-video` (`reference_image_urls[]`)
-- prompt + video → `video-to-video` (wan-2.7; `source_video_url`)
+- prompt + N images → `reference-to-video` (`reference_image_urls[]`; veo-3.1 uses `reference_images[]`)
+- prompt + video → `video-to-video` (`video_url`; wan-2.7 restyle, ltx-retake segment replace, kling-motion-control motion transfer)
 - portrait + audio → `audio-to-video` (pruna-avatar; `first_frame_url` + `audio_url` + `audio_duration_seconds`)
 
 ## Audio `type`
@@ -105,19 +115,17 @@ Never call `var2_upload_asset` for a text-only request. There is nothing to uplo
 
 Polls return immediately. The inline viewer auto-polls — never loop a poll yourself.
 
-## Asset URLs — CRITICAL
+## Asset URLs
 
-Tool inputs (`image_url`, `first_frame_url`, `reference_image_url(s)`, `source_video_url`, `audio_url`, `image`, and every other URL argument on **every tool except var2_upload_asset**) MUST be a **storage URL** that returns the raw bytes:
+Tool inputs (`image_url`, `first_frame_url`, `reference_image_url(s)`, `video_url`, `audio_url`, `image`) accept — in order of preference:
 
-- ✅ `https://api.var2.ai/storage/v1/object/public/<bucket>/<path>`
-- ✅ `https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>`
+- ✅ the `url` returned by a previous var2 tool (create/get/upload) — pass it verbatim; the normal chaining path
+- ✅ a var2 **share link** (`https://www.var2.ai/image|video|music|3d/<id>`) — auto-resolved server-side
 - ✅ a public https URL the user pasted (third-party image/audio/video CDN)
-- ❌ `https://www.var2.ai/image/<placeholder_id>` — this is a **share page** (HTML). Backend cannot fetch image bytes from it; the call will fail.
-- ❌ any URL constructed from a placeholder_id alone
+- ❌ a bare placeholder_id in a URL parameter (only params documented as accepting ids — join/trim segments, `audioRecordId` — take ids)
+- ❌ any URL you constructed or invented
 
-Where the storage URL comes from: **every create_\*/upload_asset/get_\*_result tool returns a `url` field on completion** — that's the storage URL. Pass that value verbatim into the next tool.
-
-To chain a placeholder_id through a downstream tool: call `var2_get_<modality>_result` first, take the `url` from its response, then pass that `url` into `var2_modify_image` / `var2_create_video` / `var2_create_3d` / `var2_join_videos`.
+To chain a placeholder_id through a URL-only downstream param: call `var2_get_<modality>_result` first (`inline_media: false`), take the `url` from its response, and pass that.
 
 ## Other shortcuts
 
@@ -126,12 +134,15 @@ To chain a placeholder_id through a downstream tool: call `var2_get_<modality>_r
 
 ## Per-model gotchas (video)
 
-- kling*: `duration` = "5" | "10" (string), `aspect_ratio` ∈ 1:1 / 16:9 / 9:16, `mode` std | pro
+- kling (2.6): `duration` = "5" | "10" (string), `aspect_ratio` ∈ 1:1 / 16:9 / 9:16, `mode` std | pro. No end frame.
+- kling-3: refs ride on type=text-to-video — `image_urls` ([start] or [start, end]) + `kling_elements` (named subjects, 2+ images each); multi-shot via `multi_shots: true` + `shots[]`.
 - grok-imagine: `duration` = "6" | "10" (string), `resolution` 480p | 720p, `mode` normal | fun | spicy. i2v uses singular `reference_image_url`.
+- grok-imagine-video-1-5: i2v only, `duration` 3–15 (number), aspect follows the input image.
 - veo-3.1 / sora-2: `aspect_ratio` portrait | landscape
-- ltx*: `duration` in seconds (number, per-second pricing)
-- seedance-2: ≤15s, `mode` pro | fast
-- wan-2.7: 1080p, v2v via `source_video_url`
+- ltx-2.3: `duration` in seconds (number, per-second pricing); first + last frame
+- ltx-retake: `mode` replace_audio | replace_video | replace_audio_and_video; billed on full trimmed source duration
+- seedance-2: ≤15s, `mode` pro | fast, `generate_audio` default true
+- wan-2.7: 1080p, v2v via `video_url` (`source_video_url` is a deprecated alias)
 - pruna-avatar: type=audio-to-video; `first_frame_url` + `audio_url` (MP3/WAV/M4A, ≤60s) + `audio_duration_seconds`; `resolution` 720p (default) | 1080p
 
 ## Reply

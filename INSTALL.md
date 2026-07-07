@@ -1,10 +1,17 @@
 # Install VAR2 Skills
 
-One skill ships in this repo:
+Four skills ship in this repo:
 
-- **`var2-generate`** — generate and edit images, videos, music, and 3D models
-  through the VAR2 MCP server, with model selection, prompt engineering, cost
-  estimation, polling, and Hebrew/Arabic text guidance.
+- **`var2-generate`** — the core skill: generate and edit images, videos,
+  music, voice-overs, and 3D models through the VAR2 MCP server, with model
+  selection, uploads, prompt engineering, cost estimation, polling, stitching,
+  and Hebrew/Arabic text guidance.
+- **`var2-routing`** — fast dispatch rules when a prompt could map to several
+  var2 tools.
+- **`ai-music-video-maker`** — end-to-end music video (song → consistent
+  singer → lip-synced clips → final stitched cut).
+- **`creative-orchestrator`** — turns an open-ended creative brief into a
+  custom multi-step VAR2 pipeline and executes it.
 
 VAR2 is an **MCP server with OAuth sign-in** — no CLI, and in the normal flow
 no API key to paste. Setup is two parts: **connect VAR2**, then (in Claude
