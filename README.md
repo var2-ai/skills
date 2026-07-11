@@ -61,10 +61,13 @@ guidance.
 
 ## Distribution
 
-- `npx skills add var2-ai/skills` (recommended, cross-agent)
-- Claude Code plugin: `/plugin marketplace add var2-ai/skills` then
-  `/plugin install var2@var2`
-- `./setup` script (clone + symlink)
+- **Claude Code plugin (one step — MCP server + all skills):**
+  `/plugin marketplace add var2-ai/skills` then `/plugin install var2@var2`.
+  The plugin bundles the VAR2 MCP server config, so the connector and the
+  skills install together; a browser opens once for the OAuth sign-in.
+- `npx skills add var2-ai/skills` (cross-agent, skills only — connect the MCP
+  server separately, see `INSTALL.md`)
+- `./setup` script (clone + symlink, skills only)
 
 ## License
 

@@ -23,5 +23,11 @@
     "./skills/var2-routing",
     "./skills/ai-music-video-maker",
     "./skills/creative-orchestrator"
-  ]
+  ],
+  "mcpServers": {
+    "var2": {
+      "type": "http",
+      "url": "https://www.var2.ai/api/mcp"
+    }
+  }
 }

@@ -35,6 +35,12 @@ claude mcp add var2 --transport http https://www.var2.ai/api/mcp
 
 A browser opens for sign-in; approve and you're connected.
 
+**ChatGPT (Plus/Pro/Business):** ChatGPT supports MCP connectors in developer
+mode: **Settings → Connectors → Advanced → enable Developer mode**, then
+**Create** a connector with URL `https://www.var2.ai/api/mcp` (OAuth sign-in
+opens in the browser). ChatGPT has no skills system — the VAR2 server's own
+tool descriptions carry the routing guidance, so the connector alone works.
+
 **Other MCP hosts:** add an HTTP MCP server at `https://www.var2.ai/api/mcp`;
 the host discovers the OAuth flow automatically.
 
