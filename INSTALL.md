@@ -14,10 +14,27 @@ Four skills ship in this repo:
   custom multi-step VAR2 pipeline and executes it.
 
 VAR2 is an **MCP server with OAuth sign-in** — no CLI, and in the normal flow
-no API key to paste. Setup is two parts: **connect VAR2**, then (in Claude
-Code) **install the skill**.
+no API key to paste.
 
-## Step 1 — Connect VAR2 (OAuth, recommended)
+## Fastest path — Claude Code plugin (one install, everything included)
+
+The plugin bundles **both** the VAR2 MCP server config and all four skills:
+
+```
+/plugin marketplace add var2-ai/skills
+/plugin install var2@var2
+```
+
+Restart when prompted. On the first VAR2 tool call a browser opens — sign in
+with your VAR2 account and approve access. That's the whole setup; skip to
+**Verify** below.
+
+## Manual path — connect the MCP server, then add the skills
+
+Use this on hosts without the plugin system (claude.ai, ChatGPT, other MCP
+hosts) or if you prefer managing the pieces separately.
+
+### Step 1 — Connect VAR2 (OAuth)
 
 You sign in with your VAR2 account in the browser — nothing to copy/paste.
 
@@ -27,7 +44,7 @@ You sign in with your VAR2 account in the browser — nothing to copy/paste.
 2. Name it **VAR2**, URL: `https://www.var2.ai/api/mcp`
 3. Click **Connect**, sign in with your VAR2 account, approve access.
 
-**Claude Code:**
+**Claude Code (without the plugin):**
 
 ```bash
 claude mcp add var2 --transport http https://www.var2.ai/api/mcp
@@ -48,19 +65,12 @@ the host discovers the OAuth flow automatically.
 > **https://www.var2.ai/dashboard/settings?tab=developers** and connect with
 > `--header "Authorization: Bearer <KEY>"`. Most users should use OAuth above.
 
-## Step 2 — Install the skill (Claude Code)
+### Step 2 — Install the skills
 
-Recommended (cross-agent), requires Node.js:
+Cross-agent (requires Node.js):
 
 ```bash
 npx skills add var2-ai/skills
-```
-
-Claude Code marketplace alternative:
-
-```
-/plugin marketplace add var2-ai/skills
-/plugin install var2@var2
 ```
 
 Setup-script fallback (clone + symlink; does **not** connect VAR2 — do Step 1
@@ -72,9 +82,8 @@ cd skills
 ./setup
 ```
 
-The skill is a Claude Code add-on that makes the agent use VAR2 well.
-claude.ai / desktop users get the tools from the connector alone and can skip
-Step 2.
+The skills make the agent *use* VAR2 well. claude.ai / desktop / ChatGPT users
+get the tools from the connector alone and can skip this step.
 
 ## Verify
 
@@ -83,13 +92,13 @@ Ask your agent:
 > "List the VAR2 models."
 
 The agent should call `var2_list_models` and return the catalog. If it gets a
-sign-in / `401` challenge, finish the browser sign-in from Step 1; if the tool
-isn't found, recheck the connector.
+sign-in / `401` challenge, finish the browser sign-in; if the tool isn't
+found, recheck the plugin/connector.
 
 ## Updating
 
 | Method | Update command |
 |---|---|
+| Claude Code plugin | `/plugin update var2@var2` |
 | `npx skills` | re-run `npx skills add var2-ai/skills` |
-| Claude Code marketplace | `/plugin update var2@var2` |
 | Setup script | `cd skills && git pull && ./setup` |
