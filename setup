@@ -58,12 +58,15 @@ case "$HOST" in
   claude)  TARGET_DIR="$HOME/.claude/skills" ;;
   unknown)
     warn "Could not auto-detect the agent host."
-    info "Re-run with --host <agent>, or copy var2-generate/ into your agent's skills directory manually."
+    info "Re-run with --host <agent>, or copy var2-generate/ (and skills/*/) into your agent's skills directory manually."
     exit 1 ;;
   *)       TARGET_DIR="$HOME/.$HOST/skills" ;;
 esac
 
 SKILLS=(var2-generate)
+for d in "$SKILL_DIR"/skills/*/; do
+  [ -f "$d/SKILL.md" ] && SKILLS+=("skills/$(basename "$d")")
+done
 
 ok "Detected host: $HOST"
 ok "Target path: $TARGET_DIR/<skill-name>"
@@ -71,30 +74,32 @@ echo
 
 mkdir -p "$TARGET_DIR"
 for skill in "${SKILLS[@]}"; do
+  name="$(basename "$skill")"
   src="$SKILL_DIR/$skill"
-  dst="$TARGET_DIR/$skill"
+  dst="$TARGET_DIR/$name"
   if [ ! -d "$src" ]; then err "Source missing: $src"; continue; fi
   if [ -L "$dst" ]; then
     if [ "$(readlink "$dst")" = "$src" ]; then
-      ok "$skill already symlinked"
+      ok "$name already symlinked"
     else
-      info "$skill: replacing stale symlink"
-      rm "$dst"; ln -s "$src" "$dst"; ok "$skill symlinked"
+      info "$name: replacing stale symlink"
+      rm "$dst"; ln -s "$src" "$dst"; ok "$name symlinked"
     fi
   elif [ -e "$dst" ]; then
     warn "$dst exists but is not a symlink to $src — leaving alone."
   else
-    ln -s "$src" "$dst"; ok "$skill symlinked"
+    ln -s "$src" "$dst"; ok "$name symlinked"
   fi
 done
 echo
 
 fail=0
 for skill in "${SKILLS[@]}"; do
-  if [ -f "$TARGET_DIR/$skill/SKILL.md" ]; then
-    ok "$skill present"
+  name="$(basename "$skill")"
+  if [ -f "$TARGET_DIR/$name/SKILL.md" ]; then
+    ok "$name present"
   else
-    err "$skill missing at $TARGET_DIR/$skill/SKILL.md"; fail=1
+    err "$name missing at $TARGET_DIR/$name/SKILL.md"; fail=1
   fi
 done
 echo

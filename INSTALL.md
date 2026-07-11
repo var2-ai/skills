@@ -1,10 +1,17 @@
 # Install VAR2 Skills
 
-One skill ships in this repo:
+Four skills ship in this repo:
 
-- **`var2-generate`** — generate and edit images, videos, music, and 3D models
-  through the VAR2 MCP server, with model selection, prompt engineering, cost
-  estimation, polling, and Hebrew/Arabic text guidance.
+- **`var2-generate`** — the core skill: generate and edit images, videos,
+  music, voice-overs, and 3D models through the VAR2 MCP server, with model
+  selection, uploads, prompt engineering, cost estimation, polling, stitching,
+  and Hebrew/Arabic text guidance.
+- **`var2-routing`** — fast dispatch rules when a prompt could map to several
+  var2 tools.
+- **`ai-music-video-maker`** — end-to-end music video (song → consistent
+  singer → lip-synced clips → final stitched cut).
+- **`creative-orchestrator`** — turns an open-ended creative brief into a
+  custom multi-step VAR2 pipeline and executes it.
 
 VAR2 is an **MCP server with OAuth sign-in** — no CLI, and in the normal flow
 no API key to paste. Setup is two parts: **connect VAR2**, then (in Claude
@@ -27,6 +34,12 @@ claude mcp add var2 --transport http https://www.var2.ai/api/mcp
 ```
 
 A browser opens for sign-in; approve and you're connected.
+
+**ChatGPT (Plus/Pro/Business):** ChatGPT supports MCP connectors in developer
+mode: **Settings → Connectors → Advanced → enable Developer mode**, then
+**Create** a connector with URL `https://www.var2.ai/api/mcp` (OAuth sign-in
+opens in the browser). ChatGPT has no skills system — the VAR2 server's own
+tool descriptions carry the routing guidance, so the connector alone works.
 
 **Other MCP hosts:** add an HTTP MCP server at `https://www.var2.ai/api/mcp`;
 the host discovers the OAuth flow automatically.

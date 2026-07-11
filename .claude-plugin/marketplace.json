@@ -1,0 +1,39 @@
+{
+  "name": "var2",
+  "owner": {
+    "name": "VAR2.ai",
+    "url": "https://www.var2.ai"
+  },
+  "metadata": {
+    "description": "Agent skills for the VAR2.ai MCP server."
+  },
+  "plugins": [
+    {
+      "name": "var2",
+      "source": "./",
+      "version": "0.3.0",
+      "description": "Generate and edit images, videos, music, voice-overs, and 3D models through the VAR2 MCP server — model selection, uploads, cost estimation, polling, stitching, and Hebrew/Arabic text guidance.",
+      "author": {
+        "name": "VAR2.ai",
+        "url": "https://www.var2.ai"
+      },
+      "license": "MIT",
+      "category": "media",
+      "keywords": [
+        "var2",
+        "mcp",
+        "image-generation",
+        "video-generation",
+        "music-generation",
+        "tts",
+        "3d"
+      ],
+      "skills": [
+        "./var2-generate",
+        "./skills/var2-routing",
+        "./skills/ai-music-video-maker",
+        "./skills/creative-orchestrator"
+      ]
+    }
+  ]
+}

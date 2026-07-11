@@ -14,18 +14,28 @@ Thanks for improving the VAR2 skills package.
 
 ## Making a change
 
-1. Edit `var2-generate/SKILL.md` and/or `var2-generate/references/*.md`.
-2. If you add a reference file, link it from `SKILL.md` (CI fails on orphans
-   and on dead links).
-3. **Bump the version** in all four places (CI enforces they match):
+1. Edit the skill's `SKILL.md` and/or its `references/*.md` (skills live at
+   `var2-generate/` and under `skills/`).
+2. If you add a reference file, link it from that skill's `SKILL.md` (CI fails
+   on orphans and on dead links).
+3. **Bump the version** everywhere (CI enforces they match):
    - `VERSION`
-   - `var2-generate/SKILL.md` frontmatter `version`
+   - every `SKILL.md` frontmatter `version` (all skills share the package
+     version)
    - `.claude-plugin/plugin.json` `version`
    - `.claude-plugin/marketplace.json` `plugins[0].version`
-4. If you add a skill folder, add it to
+4. If you add a skill folder, add it to **both**
+   `.claude-plugin/plugin.json` `skills` and
    `.claude-plugin/marketplace.json` `plugins[0].skills` (CI checks every
-   `var2-*/` folder is listed) and name the folder to match the `SKILL.md`
-   frontmatter `name`.
+   skill folder is listed in both) and name the folder to match the
+   `SKILL.md` frontmatter `name`.
+5. Reference docs copied into more than one skill (self-containment forbids
+   cross-skill links) must stay byte-identical — apply fixes to every copy
+   (CI enforces sync).
+6. `skills/var2-routing` mirrors the routing guidance the VAR2 MCP server
+   itself sends to hosts. When the live server guidance changes, update that
+   skill to match — it must never contradict what the server tells agents at
+   runtime.
 
 ## Frontmatter rules
 
@@ -46,5 +56,9 @@ the skill instructs tool use.
 ## Local check
 
 CI (`.github/workflows/validate-skills.yml`) validates frontmatter, version
-sync, marketplace coverage, reference resolution, and the no-`../` rule. Skim
-that workflow to reproduce the checks locally before opening a PR.
+sync, marketplace coverage, reference resolution, and the no-`../` rule. Run
+the same checks locally before opening a PR:
+
+```bash
+python3 scripts/validate_skills.py
+```
