@@ -17,7 +17,7 @@ err()  { echo "${RED}✗${RESET} $1"; }
 info() { echo "${BOLD}→${RESET} $1"; }
 
 SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
-if [ ! -f "$SKILL_DIR/VERSION" ] || [ ! -d "$SKILL_DIR/var2-generate" ] || [ ! -d "$SKILL_DIR/skills" ]; then
+if [ ! -f "$SKILL_DIR/VERSION" ] || [ ! -d "$SKILL_DIR/var2-generate" ]; then
   err "Run this from the var2-ai/skills repo root (VERSION and var2-generate/ not found)."
   exit 1
 fi
@@ -63,7 +63,10 @@ case "$HOST" in
   *)       TARGET_DIR="$HOME/.$HOST/skills" ;;
 esac
 
-SKILLS=(var2-generate skills/var2-routing skills/ai-music-video-maker skills/creative-orchestrator)
+SKILLS=(var2-generate)
+for d in "$SKILL_DIR"/skills/*/; do
+  [ -f "$d/SKILL.md" ] && SKILLS+=("skills/$(basename "$d")")
+done
 
 ok "Detected host: $HOST"
 ok "Target path: $TARGET_DIR/<skill-name>"

@@ -24,10 +24,18 @@ Thanks for improving the VAR2 skills package.
      version)
    - `.claude-plugin/plugin.json` `version`
    - `.claude-plugin/marketplace.json` `plugins[0].version`
-4. If you add a skill folder, add it to
+4. If you add a skill folder, add it to **both**
+   `.claude-plugin/plugin.json` `skills` and
    `.claude-plugin/marketplace.json` `plugins[0].skills` (CI checks every
-   skill folder is listed) and name the folder to match the `SKILL.md`
-   frontmatter `name`.
+   skill folder is listed in both) and name the folder to match the
+   `SKILL.md` frontmatter `name`.
+5. Reference docs copied into more than one skill (self-containment forbids
+   cross-skill links) must stay byte-identical — apply fixes to every copy
+   (CI enforces sync).
+6. `skills/var2-routing` mirrors the routing guidance the VAR2 MCP server
+   itself sends to hosts. When the live server guidance changes, update that
+   skill to match — it must never contradict what the server tells agents at
+   runtime.
 
 ## Frontmatter rules
 

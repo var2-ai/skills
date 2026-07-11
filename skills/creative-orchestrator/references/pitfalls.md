@@ -18,7 +18,7 @@ reachable. Upload it first with VAR2's own durable upload tools
 (`var2_request_upload` for real/large files — signed PUT; `var2_upload_asset`
 for small inline base64 or importing a third-party `url`) and pass the
 returned `public_url` / `url` verbatim. Full decision table:
-`references/media-inputs.md`. This is the #1 reason a "use my photo" request
+`media-inputs.md` (in this references folder). This is the #1 reason a "use my photo" request
 blows up on the first VAR2 call. Never fabricate a URL to satisfy a tool
 argument (no `example.com`, `local_file_url`, `path_to_*`, `attachment://*`,
 `data:*`).
@@ -58,7 +58,9 @@ tradeoffs spelled out in their language:
   sending the user to an editor.
 
 Frame the question for what they're actually trying to make. Don't pick on
-their behalf. The default to lean toward when a storyboard exists is B over A
+their behalf. Defaults to lean toward (matching `SKILL.md`): **Option C** when
+each frame is a distinct scene/shot in a cut, **Option B** when the frames are
+beats of one continuous arc, and B over A whenever a storyboard exists at all
 — but always confirm before spending video tokens, because the choice is
 irreversible once the job runs.
 
@@ -111,4 +113,5 @@ double-bill.
 ## Suno + Hebrew
 
 Stick to English lyrics or instrumental by default. If the user insists on
-Hebrew, use custom mode with full niqqud — see `references/non-latin-text.md`.
+Hebrew, use custom mode with full niqqud — see `non-latin-text.md` (in this
+references folder).

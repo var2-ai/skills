@@ -39,7 +39,8 @@ Do this **once** at the start of a session, not before every job.
 2. If it fails with an auth error (`401`, a `WWW-Authenticate` / sign-in
    challenge, `expired`, `revoked`), the OAuth sign-in was not completed or has
    expired. Ask the user to reconnect and finish the browser sign-in (see
-   `INSTALL_FOR_AGENTS.md`, Step 1). Do not retry blindly. (Only if they use
+   `INSTALL_FOR_AGENTS.md`, Step 1 — at https://github.com/var2-ai/skills if
+   not installed alongside this skill). Do not retry blindly. (Only if they use
    the advanced headless key: their `vak_` key is bad — they recreate it at
    **https://www.var2.ai/dashboard/settings?tab=developers**.)
 3. If it fails with a connection/transport error or the tool is missing, the
@@ -176,7 +177,8 @@ Full decision table, chunked uploads, and the blocked-PUT recovery ladder:
 ## Workflow — 3D
 
 1. `var2_create_3d` with `image` (an image URL or var2 share link), `model`
-   (default `trellis-2`; `tripo` for high-fidelity/PBR at ~3× the cost),
+   (default `trellis-2`; `tripo` for high-fidelity/PBR at a higher price —
+   estimate first),
    optional `resolution` (`512` | `1024` | `1536`) and `texture_size`
    (`1024` | `2048` | `3072` | `4096`).
 2. Best meshes come from a single clean subject — run `var2_modify_image`

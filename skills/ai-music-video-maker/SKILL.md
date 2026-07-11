@@ -45,12 +45,12 @@ Read `references/suno.md` for the full Suno recipe. Key points:
 - **For real, controlled lyrics you MUST use custom mode.** Pass `customMode: true`, put the full lyrics in `prompt`, and supply BOTH `style` (short genre/mood/instrumentation description, keep under ~200 chars) and `title`. In custom mode the 500-char prompt cap does NOT apply; without it, prompts over 500 chars are rejected.
 - **Hebrew lyrics: add niqqud (vowel points).** Niqqud measurably improves Suno's syllable accuracy and pronunciation. When the user gives unpointed Hebrew lyrics, add full niqqud yourself before sending. Structure tags like `[Verse 1]`, `[Chorus]`, `[Bridge]` help.
 - Suno returns 2 variations per call. Share both share URLs verbatim, poll each with `var2_get_audio_result`, and let the user pick.
-- **You need the exact final duration** (in seconds) of the chosen track before segmenting. Ask the user, or download the mp3 and run `ffprobe`.
+- **You need the exact final duration** (in seconds) of the chosen track before segmenting. Take it from the `var2_get_audio_result` metadata first; only if absent, ask the user or download the mp3 and run `ffprobe`.
 
 ## Phase 2 — The singer (consistent across all scenes)
 
 The singer must look identical in every scene — same face, hair, outfit — only the location/angle changes.
-- Generate ONE canonical singer portrait with `var2_create_image`, model `nano-banana-2` (preferred — fast, cheap, excellent; do NOT default to nano-banana-pro). Aspect ratio = the user's chosen ratio.
+- Generate ONE canonical singer portrait with `var2_create_image`, model `nano-banana-2` (this pipeline's pick: fast, cheap, excellent through long image_refs chains; `nano-banana-pro` — the catalog's general default — is the alternative when on-image non-Latin text matters). Aspect ratio = the user's chosen ratio.
 - **The face must be clearly visible and roughly front-facing, with the mouth unobstructed** — this is mandatory because pruna-avatar lip-syncs the mouth. Put a handheld microphone near the mouth if the user wants a performance look (it also helps focus the sync).
 - Get user approval on the singer before generating the rest.
 - For every other scene, reuse the canonical portrait as `image_refs` (and `image_url` with `type: image-to-image`) so identity stays locked. Change ONLY the location/background/lighting in each prompt; keep "identical face, same hair, same outfit" in the text.
@@ -74,12 +74,12 @@ Required `var2_create_video` params for this model (verified):
 - `audio_url`: the scene's uploaded segment URL
 - `audio_duration_seconds`: the segment length (REQUIRED — distinct from `duration`)
 - `duration`: same segment length
-- `resolution`: `"720p"` (cheap, 85 tok/s) or `"1080p"` (150 tok/s)
+- `resolution`: `"720p"` (the cheap draft/default tier) or `"1080p"` (roughly double the per-second price — verify with `var2_estimate_cost`)
 - `prompt`: describe the performance + scene, and to keep the mouth synced to only the lead voice, append: *"Lip-sync ONLY to the lead singing voice; ignore background gang vocals, crowd shouts, and instruments."*
 
 If a `create_video` call returns a bare `Denied.` or other hard error, STOP and surface it to the user verbatim — it usually means an account/quota/rate limit, not a bad request. Do not hammer retries.
 
-**Call budget:** `var2_create_video` allows at most 4 calls per turn. For 8 scenes, do them in two batches (4 + 4) across turns. Poll each with `var2_get_video_result` (long-polls ~5 min server-side; usually one poll per clip).
+**Call budget:** respect the per-turn `create_*` budget stated in the live tool response — when the scene count exceeds it, batch across turns (e.g. 8 scenes as two batches of 4 if the budget is 4). Poll each with `var2_get_video_result` (long-polls ~5 min server-side; usually one poll per clip).
 
 If the MCP rejects `audio-to-video` or `pruna-avatar` in its schema enums, the model isn't wired into `create_video` on the user's deployment yet. Tell the user (they may be the developer) exactly what to add: `audio-to-video` to the `type` enum and `pruna-avatar` to the `model` enum, then retry.
 
@@ -95,7 +95,7 @@ Read `references/pipeline.md` for the exact join call. Summary:
 
 ## Cost discipline
 
-Before Phase 1 and again before Phase 4, run `var2_estimate_cost` for the whole batch (song + N images + N clips) and show the user the total. A typical 8-scene 720p video is ~20k–23k tokens. Always run ONE full test scene (1 image + 1 clip on its real segment) and get the user's sign-off before generating the remaining scenes.
+Before Phase 1 and again before Phase 4, run `var2_estimate_cost` for the whole batch (song + N images + N clips) and show the user the total — the estimate is the number you quote, never a remembered figure (an 8-scene 720p video runs in the low tens of thousands of tokens). Always run ONE full test scene (1 image + 1 clip on its real segment) and get the user's sign-off before generating the remaining scenes.
 
 ## Quick checklist
 1. Brief (genre, character, mood, aspect, lyrics source, language)

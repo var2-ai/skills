@@ -31,7 +31,7 @@ Preferred defaults:
 | `seedream-5-lite` | Lightweight, social-format friendly (square). |
 | `grok-imagine` | Returns a **batch** of variations in one call (6 text-to-image / 2 image-to-image). Use when the user wants options fast. |
 | `z-image` | Cheap single-output drafts. |
-| `flux-schnell`, `z-image-turbo` | **Cheapest tier** — 4-step distilled text-to-image (~20 tokens at 1K). Bulk drafts, concepting. No i2i, no fine text. |
+| `flux-schnell`, `z-image-turbo` | **Cheapest tier** — 4-step distilled text-to-image at a small fraction of standard-tier price. Bulk drafts, concepting. No i2i, no fine text. |
 | `flux-2-klein` | Cheapest-tier **image-to-image** + multi-reference (the only i2i in the fast tier). |
 | `nano-banana` | **Legacy.** Only if the user explicitly asks for it. |
 
@@ -47,7 +47,7 @@ Duration, resolution, and aspect support are **model-specific** — check
 | `ltx-2.3` | Cinematic with native audio; per-second pricing; first + last frame; good Hebrew/Arabic. |
 | `ltx-retake` | **Surgical segment retake** on an existing clip — replace 1–10s of audio, video, or both without re-rendering. Billed on full trimmed source duration. |
 | `wan-2.7` | **Video-to-video editing** (the proper V2V model). 720p/1080p, prompt-extend, good Hebrew/Arabic. |
-| `pruna-avatar` | **Talking head / lip-sync** (`type: audio-to-video`): portrait + audio (≤60s) → spokesperson clip. Cheapest per-second video (~85 tok/s at 720p). Requires `audio_duration_seconds`. |
+| `pruna-avatar` | **Talking head / lip-sync** (`type: audio-to-video`): portrait + audio (≤60s) → spokesperson clip. The cheapest per-second video path. Requires `audio_duration_seconds`. |
 | `happyhorse` | All-in-one: text/image/reference/video-to-video in one model, up to 4 refs, audio control. |
 | `kling` | Kling 2.6 — fixed 5s/10s tiers (`duration` as STRING `"5"`/`"10"`), 1:1/16:9/9:16, optional sound. No end frame. |
 | `kling-3` | **Multi-shot narratives** (`multi_shots: true` + `shots[]`), first/last frame, subject refs via `kling_elements` (named subjects, 2+ images each). Per-second std/pro pricing. |
@@ -74,7 +74,7 @@ curated set or 10K+ `library`). See `dialog-and-voices.md`.
 | Model ID | What it's for |
 |---|---|
 | `trellis-2` | **Default.** Image-to-3D, textured GLB. `resolution` 512/1024/1536, `texture_size` 1024–4096. Best price. |
-| `tripo` | High-fidelity 3D with PBR materials, up to 20k faces — production assets. ~3× the cost of trellis-2. |
+| `tripo` | High-fidelity 3D with PBR materials, up to 20k faces — production assets. A multiple of trellis-2's price — estimate first. |
 
 ## Modify models
 

@@ -30,9 +30,9 @@ You are a creative director with a fully-stocked VAR2.ai studio at your fingerti
 Before the first generation in a session, call `var2_list_models`. This both verifies the MCP wiring and gives you the live model catalog. Do this **once** — not before every job.
 
 - **Model list returned** → connected and signed in. Proceed.
-- **`401` / sign-in challenge / `expired` / `revoked`** → the OAuth sign-in was not completed or has expired. Ask the user to reconnect the VAR2 connector and finish the browser sign-in (see `INSTALL_FOR_AGENTS.md`). Headless `vak_` key users recreate their key at **https://www.var2.ai/dashboard/settings?tab=developers**.
+- **`401` / sign-in challenge / `expired` / `revoked`** → the OAuth sign-in was not completed or has expired. Ask the user to reconnect the VAR2 connector and finish the browser sign-in (install guide: `INSTALL_FOR_AGENTS.md` at https://github.com/var2-ai/skills). Headless `vak_` key users recreate their key at **https://www.var2.ai/dashboard/settings?tab=developers**.
 - **`429` / rate or concurrency limit** → too many in-flight jobs. Wait for one to finish, then retry.
-- **Connection/transport error or tool not found** → the MCP server isn't registered with this host. Point the user to `INSTALL_FOR_AGENTS.md`; the server URL is `https://www.var2.ai/api/mcp`.
+- **Connection/transport error or tool not found** → the MCP server isn't registered with this host. Point the user to the install guide (`INSTALL_FOR_AGENTS.md` at https://github.com/var2-ai/skills); the server URL is `https://www.var2.ai/api/mcp`.
 - **Insufficient tokens / spend cap** (on a later create call) → report what the job would have cost, point to the dashboard/billing page above, do not retry in a loop.
 
 `var2_list_models` is the **source of truth** for model IDs, pricing, and per-model capabilities. The toolbox below is selection guidance; when the live list and this file disagree, trust the live list.
@@ -139,7 +139,7 @@ Model: `gpt-image-2` or `nano-banana-2` at 2K. Plain neutral background, the cha
 
 For each video shot in the script, generate the **first frame** as a still image *before* generating the video. Each storyboard frame uses the character sheet(s) as `image_refs` so identity stays locked. Three wins at once:
 
-1. **Approval gate.** They see exactly what shot N will start with for ~400 tokens, before committing the ~4,800 tokens of seedance. If a shot's composition or lighting is wrong, fix the still — cheap. If you find out after the video — expensive.
+1. **Approval gate.** They see exactly what shot N will start with for the price of one still, before committing a video job that costs roughly ten times more. If a shot's composition or lighting is wrong, fix the still — cheap. If you find out after the video — expensive.
 2. **Better video.** Feeding the storyboard frame as `first_frame_url` to `image-to-video` (or as one of the references) anchors the shot's composition much harder than prose alone.
 3. **Continuity across shots.** Because every storyboard frame shares the same character sheet refs, the character looks consistent from shot 1 to shot 4.
 
@@ -159,13 +159,12 @@ See `references/pitfalls.md` ("image-to-video vs reference-to-video") for the fu
 
 Every video model has a duration ceiling — check `var2_list_models` for current limits (as of writing: `seedance-2` 15s; `kling` 2.6 fixed `"5"`/`"10"`; `kling-3` 5–15s total; `grok-imagine` `"6"`/`"10"`; `grok-imagine-video-1-5` 3–15s; `veo-3.1` ~8s; `ltx-2.3`/`wan-2.7` per-second; `sora-2` 10/15-frame tiers).
 
-When the user asks for a single continuous shot longer than the model supports, **split it into back-to-back segments chained last-frame → first-frame**:
+When the user asks for a single continuous shot longer than the model supports, **split it into back-to-back segments chained through a shared handoff frame**:
 
-1. Generate segment A as `image-to-video` from the storyboard frame. (Models with `last_frame_url` support — kling-3, veo-3.1, ltx-2.3, seedance-2, wan-2.7 — can even target the handoff frame exactly.)
-2. After A renders, extract its last frame (screenshot from the share page, or `image-to-image` the storyboard frame forward in time as a stand-in).
-3. Generate segment B as `image-to-video` with `first_frame_url` = last frame of A.
-4. Prompt B to *continue* the motion, not restart it ("the camera continues to pull back", "she keeps running, hair still in mid-motion").
-5. Stitch with `var2_join_videos` — the frame match makes the cut invisible.
+1. **Best path (models with `last_frame_url`: kling-3, veo-3.1, ltx-2.3, seedance-2, wan-2.7):** generate the handoff moment ONCE as a cheap still (image-to-image off the storyboard frame, "the action N seconds later"), then pass it as segment A's `last_frame_url` AND segment B's `first_frame_url`. Exact pixel match at the cut for the price of one image job.
+2. Fallback (no last-frame support): generate segment A first, then use an `image-to-image` projection of the storyboard frame as B's `first_frame_url` stand-in — accept that the seam may show.
+3. Prompt B to *continue* the motion, not restart it ("the camera continues to pull back", "she keeps running, hair still in mid-motion").
+4. Stitch with `var2_join_videos` — the frame match makes the cut invisible.
 
 Frame it as a plan, not a limitation. **When NOT to split:** if cutting between shots is acceptable (it almost always is for narrative video), don't split — splitting is for one continuous take (a long oner, a slow zoom, a held emotion).
 
@@ -271,7 +270,7 @@ Rough cost: ~20,000 tokens (2 character sheets + 4 storyboard frames + 4 cinemat
 Ready to start with the character sheets?
 ```
 
-What this example teaches: **the storyboard pass is not optional overhead — it's the pre-flight check that prevents an 18,000-token reshoot.** ~2,600 tokens of stills gate a ~17,000-token video commitment, with two course-correction points before any video token is spent.
+What this example teaches: **the storyboard pass is not optional overhead — it's the pre-flight check that prevents a reshoot costing an order of magnitude more.** A small stills investment gates a video commitment roughly 10× larger, with two course-correction points before any video token is spent (exact numbers always come from `var2_estimate_cost`).
 
 **Five more worked examples** (coffee commercial, cartoon→comic→live-action, music video, multiverse selfie, motion comic) are in `references/examples.md`.
 
@@ -282,9 +281,9 @@ When the user supplies a local/attached file ("this photo of me", "my logo"), VA
 ## Building blocks — the VAR2 toolbox
 
 **`var2_create_image`** — text→image or image→image.
-- **Default picks: `gpt-image-2` or `nano-banana-2`.** Both excellent across the board, both handle Hebrew/Arabic/non-Latin text reliably. Lean `gpt-image-2` for prompt adherence on long detailed prompts (up to 15 reference images). Lean `nano-banana-2` for 4K output or long image_refs chains. `nano-banana-pro` is the solid general default when in doubt.
+- **This skill's picks: `gpt-image-2` or `nano-banana-2`.** Both excellent across the board, both handle Hebrew/Arabic/non-Latin text reliably. Lean `gpt-image-2` for prompt adherence on long detailed prompts (up to 15 reference images). Lean `nano-banana-2` for 4K output or long image_refs chains — the cheaper -2 generation suits multi-step pipelines. Reach for `nano-banana-pro` (the catalog's general default) when on-image non-Latin text or maximal character consistency is the priority.
 - Photorealism, Latin only → `flux-2` (sharpest photoreal detail in the catalog)
-- Cheap drafts / throwaways → `z-image-turbo` / `flux-schnell` (~20 tokens at 1K); cheap i2i drafts → `flux-2-klein`
+- Cheap drafts / throwaways → `z-image-turbo` / `flux-schnell` (the 4-step turbo tier, a small fraction of standard-tier price); cheap i2i drafts → `flux-2-klein`
 - Character/style consistency → pass `image_refs` (nano-banana variants and gpt-image-2)
 
 **`var2_modify_image`**:
@@ -294,7 +293,7 @@ When the user supplies a local/attached file ("this photo of me", "my logo"), VA
 **`var2_create_3d`** — image→.glb mesh. `trellis-2` (default, best price) or `tripo` (high-fidelity, PBR materials, ~3× the cost — for "production quality" asks). Always feed a bg-removed image. `resolution` 512/1024/1536, `texture_size` 1024/2048/3072/4096. 1024/2048 is the sweet spot.
 
 **`var2_create_video`**:
-- **Cinematic / hero shots → `seedance-2`.** `mode: "fast"` for drafts, `"pro"` for finals. Up to 15s, up to 9 image refs, native audio (`generate_audio`). Weak on Hebrew/Arabic in scene.
+- **Cinematic / hero shots → `seedance-2`.** `mode: "fast"` for drafts, `"pro"` for finals. Up to 15s, up to 9 image refs, native audio (`generate_audio`, on by default): describe the speaker's voice, the exact dialogue/VO lines, and any SFX directly in the prompt and seedance produces them — English voice-over is its strength; for Hebrew/Arabic narration use `veo-3.1`/`ltx-2.3` or generate the audio separately with `var2_create_dialog`. Weak on Hebrew/Arabic in scene.
 - `veo-3.1` (default for non-cinematic) — strong all-around, Hebrew/Arabic narration in scene, references via `reference_images` (1–3, its own param name), `aspect_ratio: portrait | landscape`.
 - `ltx-2.3` — cinematic with native audio + per-second pricing; good Hebrew/Arabic middle ground; first+last frame.
 - `kling-3` — multi-shot narratives (`multi_shots` + `shots[]`), subject refs via `kling_elements`, first/last frame.

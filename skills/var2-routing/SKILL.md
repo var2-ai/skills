@@ -32,17 +32,17 @@ Neither upload tool is right when:
 
 **The upload procedure (do this BEFORE the create/modify/animate/3d call):**
 1. Read the file's raw bytes on YOUR side (you have the file; var2 does not).
-2. **≤1 MB →** base64-encode the bytes yourself and call `var2_upload_asset({ type, data: "<base64>", content_type })`. Use the returned `url`.
-   **>1 MB (or you can run an HTTP PUT) →** call `var2_request_upload({ filename, type })`, PUT the raw bytes to the returned `upload_url`, then use the returned `public_url`.
+2. **Can run an HTTP PUT (preferred for any real file) →** call `var2_request_upload({ filename, type })`, PUT the raw bytes to the returned `upload_url`, then use the returned `public_url` — bytes never pass through model context.
+   **No PUT available and the file is ≤1 MB →** base64-encode the bytes and call `var2_upload_asset({ type, data: "<base64>", content_type, expected_bytes })`. Use the returned `url`.
 3. Pass that `url` / `public_url` verbatim as the next tool's `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url`.
 
 | You have… | Use | Result |
 |---|---|---|
 | a local path (relative/absolute) or an attachment, AND can run an HTTP PUT | `var2_request_upload` → PUT bytes to `upload_url` → use `public_url` | **durable** first-party var2 URL (no expiry) — preferred for real files |
-| a small file (≤1 MB) | `var2_upload_asset` with base64 `data` | durable var2 URL + `placeholder_id` |
-| a third-party / temp URL to pull in | `var2_upload_asset` with `url` | downloaded + stored durably in var2 (Supabase) storage — first-party, no expiry |
+| a small file (≤1 MB), no way to PUT | `var2_upload_asset` with base64 `data` | durable var2 URL + `placeholder_id` |
+| a third-party / temp URL to pull in | `var2_upload_asset` with `url` | downloaded + stored durably in var2 storage — first-party, no expiry |
 
-All three paths land DURABLE first-party var2 (Supabase) URLs — no third party, no expiry. File paths and native attachments are resolved to bytes by YOU (the client); never send a raw path to a tool argument. After a `var2_request_upload` PUT, optionally call `var2_confirm_upload` (`path` + `type`) to validate the bytes and get a `placeholder_id` for join_videos chaining.
+All three paths land DURABLE first-party var2 URLs — no third-party host, no expiry. Never push a user's file to an external temp host to mint a URL. File paths and native attachments are resolved to bytes by YOU (the client); never send a raw path to a tool argument. After a `var2_request_upload` PUT, optionally call `var2_confirm_upload` (`path` + `type`) to validate the bytes and get a `placeholder_id` for join_videos chaining.
 
 Never fabricate URLs to satisfy a tool argument. Specifically never invent: example.com, abc123, placeholder.X, local_file_url, path_to_*, /uploads/*, attachment://*, data:*.
 
@@ -113,7 +113,7 @@ Never call `var2_upload_asset` for a text-only request. There is nothing to uplo
 | joined / stitched / merged / timeline / "the join render" | `var2_check_join_status` |
 | 3d / glb / mesh | `var2_get_3d_result` |
 
-Polls return immediately. The inline viewer auto-polls — never loop a poll yourself.
+Pollers long-poll server-side and return the current snapshot. If `state` is still `waiting`, call the same poller again (pass `inline_media: false` on repeats) until `completed`/`failed` — re-call, don't sleep-loop. In hosts with an inline viewer that auto-polls, one snapshot is enough.
 
 ## Asset URLs
 
@@ -122,7 +122,7 @@ Tool inputs (`image_url`, `first_frame_url`, `reference_image_url(s)`, `video_ur
 - ✅ the `url` returned by a previous var2 tool (create/get/upload) — pass it verbatim; the normal chaining path
 - ✅ a var2 **share link** (`https://www.var2.ai/image|video|music|3d/<id>`) — auto-resolved server-side
 - ✅ a public https URL the user pasted (third-party image/audio/video CDN)
-- ❌ a bare placeholder_id in a URL parameter (only params documented as accepting ids — join/trim segments, `audioRecordId` — take ids)
+- ❌ a bare placeholder_id in a URL-only parameter (params documented as accepting ids DO take them: join/timeline segments, `var2_trim_audio`'s `audio_url`, `audioRecordId`, `var2_save_character` images)
 - ❌ any URL you constructed or invented
 
 To chain a placeholder_id through a URL-only downstream param: call `var2_get_<modality>_result` first (`inline_media: false`), take the `url` from its response, and pass that.
@@ -142,7 +142,7 @@ To chain a placeholder_id through a URL-only downstream param: call `var2_get_<m
 - ltx-2.3: `duration` in seconds (number, per-second pricing); first + last frame
 - ltx-retake: `mode` replace_audio | replace_video | replace_audio_and_video; billed on full trimmed source duration
 - seedance-2: ≤15s, `mode` pro | fast, `generate_audio` default true
-- wan-2.7: 1080p, v2v via `video_url` (`source_video_url` is a deprecated alias)
+- wan-2.7: 720p/1080p, v2v via `video_url` (`source_video_url` is a deprecated alias)
 - pruna-avatar: type=audio-to-video; `first_frame_url` + `audio_url` (MP3/WAV/M4A, ≤60s) + `audio_duration_seconds`; `resolution` 720p (default) | 1080p
 
 ## Reply

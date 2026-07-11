@@ -49,7 +49,10 @@ a real https URL or a var2 asset reference, you haven't uploaded the file yet.
 All paths land a **durable first-party var2 URL** (no expiry) plus a
 `placeholder_id`. `type` (image | video | audio) is validated against the
 actual bytes — a mismatch rejects the upload. ≤100 MB per file. Never
-pre-shrink or downscale a file just to fit an upload path.
+pre-shrink or downscale a file just to fit an upload path, and **never push a
+user's file to a third-party temp host** (imgur, transfer.sh, etc.) to mint a
+URL — that leaks their private media and the link expires; var2's own upload
+tools exist precisely for this.
 
 **If the PUT is blocked** (sandboxed egress / host_not_allowed), recover in
 order, silently: (1) file ≤ ~1 MB → `var2_upload_asset` base64 with
@@ -96,10 +99,13 @@ is `image-to-video` with that URL as `first_frame_url`.
 
 - `kling` (2.6): `duration` = `"5"` | `"10"` (**string**), `aspect_ratio`
   1:1 / 16:9 / 9:16, `mode` std | pro. No end frame.
-- `kling-3`: per-second; refs ride on `type: text-to-video` as `image_urls`
-  ([start] or [start, end]) and `kling_elements` (named subjects, 2+ images
-  each); multi-shot via `multi_shots: true` + `shots: [{prompt, duration}]`
-  (+ optional `total_duration` 5–15s); `negative_prompt`, `sound`.
+- `kling-3`: per-second. Start/end frames work two ways: `first_frame_url` /
+  `last_frame_url` on `type: image-to-video`, OR `image_urls` ([start] or
+  [start, end]) riding on `type: text-to-video`. Subject refs
+  (`kling_elements`, named subjects with 2+ images each) and multi-shot
+  (`multi_shots: true` + `shots: [{prompt, duration}]`, optional
+  `total_duration` 5–15s) ride on `text-to-video`. Also `negative_prompt`,
+  `sound`.
 - `grok-imagine`: `duration` = `"6"` | `"10"` (**string**), `resolution`
   480p | 720p, `mode` normal | fun | spicy; i2v uses singular
   `reference_image_url`.
