@@ -1,6 +1,6 @@
 ---
 name: creative-orchestrator
-version: 0.3.0
+version: 0.3.1
 description: >-
   Decompose any creative idea into a multi-step VAR2.ai MCP pipeline and
   execute it end-to-end. Use when the user has a creative goal that involves

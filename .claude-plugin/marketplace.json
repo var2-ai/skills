@@ -11,7 +11,7 @@
     {
       "name": "var2",
       "source": "./",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "description": "Generate and edit images, videos, music, voice-overs, and 3D models through the VAR2 MCP server — model selection, uploads, cost estimation, polling, stitching, and Hebrew/Arabic text guidance.",
       "author": {
         "name": "VAR2.ai",

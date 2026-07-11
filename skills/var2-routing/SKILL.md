@@ -1,6 +1,6 @@
 ---
 name: var2-routing
-version: 0.3.0
+version: 0.3.1
 description: >-
   Dispatch rules for the VAR2 MCP server — which var2 tool to call for image /
   video / audio / voice / 3D / upload / stitch / status requests. Use when a
@@ -35,6 +35,8 @@ Neither upload tool is right when:
 2. **Can run an HTTP PUT (preferred for any real file) →** call `var2_request_upload({ filename, type })`, PUT the raw bytes to the returned `upload_url`, then use the returned `public_url` — bytes never pass through model context.
    **No PUT available and the file is ≤1 MB →** base64-encode the bytes and call `var2_upload_asset({ type, data: "<base64>", content_type, expected_bytes })`. Use the returned `url`.
 3. Pass that `url` / `public_url` verbatim as the next tool's `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url`.
+
+**A local file NEVER goes through `var2_upload_asset`'s `url` mode.** That mode only imports content already hosted at a public https URL. Do not pass an attachment handle / chat-file link as `url`, and do not upload the file to another host first to get a link — the direct byte upload (step 2) is always the first move.
 
 | You have… | Use | Result |
 |---|---|---|

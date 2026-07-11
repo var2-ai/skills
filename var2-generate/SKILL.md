@@ -1,5 +1,5 @@
 ---
-version: 0.3.0
+version: 0.3.1
 name: var2-generate
 description: >-
   Generate and edit images, videos, music, voice-overs, and 3D models with
@@ -57,13 +57,18 @@ VAR2's backend fetches **https URLs**. It cannot read your disk, your chat
 attachments, or a path like `./logo.png` — passing one fails the call.
 
 - **User supplies a local/attached file** (a photo, "my logo", a recording) →
-  **upload first**, then use the returned URL: `var2_request_upload` (signed
-  PUT — preferred for real files) or `var2_upload_asset` (base64 `data`,
-  ≤1 MB, chunkable) — then pass the returned `url` / `public_url` **verbatim**
-  as the next tool's `image_url` / `first_frame_url` / `audio_url` / etc.
+  **upload the BYTES directly to var2 first**: `var2_request_upload` (signed
+  PUT — preferred for real files) or `var2_upload_asset` with base64 `data`
+  (≤1 MB, chunkable) — then pass the returned `url` / `public_url`
+  **verbatim** as the next tool's `image_url` / `first_frame_url` /
+  `audio_url` / etc. `var2_upload_asset`'s `url` mode is **never** the path
+  for a local file: do not pass an attachment handle as `url`, and do not
+  push the file to another host first just to mint a link — direct upload is
+  always the first move.
 - **User pastes a public https URL** → pass it straight to the create/modify
   tool; VAR2 fetches it. Only re-host via `var2_upload_asset` (`url`) when
-  they explicitly ask to *import* it into VAR2.
+  they explicitly ask to *import* it into VAR2 — that mode exists solely for
+  content that already lives at a public URL.
 - **Asset already lives in VAR2** (a `var2.ai` share link, a storage URL, or a
   `placeholder_id` from an earlier call) → use it directly; share links are
   auto-resolved. Never re-upload.

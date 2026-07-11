@@ -1,6 +1,6 @@
 {
   "name": "var2",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "VAR2.ai skills — generate and edit images, videos, music, voice-overs, and 3D models through the VAR2 MCP server, plus routing, music-video, and creative-pipeline orchestration.",
   "author": {
     "name": "VAR2.ai",

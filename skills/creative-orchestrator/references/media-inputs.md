@@ -34,6 +34,14 @@ a real https URL or a var2 asset reference, you haven't uploaded the file yet.
 
 ## How to upload
 
+**Pick by what you HAVE, not by convenience.** Local bytes (a path, a chat
+attachment, a file you produced) go DIRECTLY to var2 via path 1 or 2 below.
+Path 3 — `var2_upload_asset` with `url` — is exclusively for content that
+already lives at a public https URL someone else is hosting. It is never the
+answer for a local file: an attachment handle is not a fetchable URL, and
+uploading the file somewhere else first just to mint a link is both slower
+and a privacy leak.
+
 1. **Real local file, you can run an HTTP PUT** (preferred):
    `var2_request_upload({ filename, type, content_type })` → returns a signed
    single-use `upload_url` (~2h) + a durable `public_url`. PUT the raw bytes:
