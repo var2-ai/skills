@@ -1,6 +1,6 @@
 ---
 name: var2-routing
-version: 0.3.0
+version: 0.4.0
 description: >-
   Dispatch rules for the VAR2 MCP server — which var2 tool to call for image /
   video / audio / voice / 3D / upload / stitch / status requests. Use when a
@@ -18,6 +18,8 @@ var2 fetches https URLs and resolves placeholder_ids. It cannot read attachments
 
 | Situation | Action |
 |---|---|
+| Your HOST filled in a `file` object for the attachment (native file params — ChatGPT web/desktop) | `var2_upload_asset` with that `file` passed through as-is — no url, no base64 — then chain |
+| Local path or filename AND `var2_upload_file` is available (var2-local extension, Claude Desktop) | `var2_upload_file({ path })` — one call, uploads and returns the url (`var2_find_file` first if you only know the name) |
 | User attached / uploaded / "from my phone" / "this image" / "my logo" / "I just sent" — and gave NO https URL | `var2_request_upload` (durable) — or `var2_upload_asset` — first, then chain |
 | Third-party URL (imgur / 0x0.st / dropbox / drive / CDN / tweet) + user asks "pull into var2" / "import" | `var2_upload_asset` (`url`) |
 | Third-party URL + user asks for an end action (upscale / animate / remove-bg / 3d / join) without saying "import" | call the create/modify/join tool with that URL directly |
@@ -28,23 +30,32 @@ Neither upload tool is right when:
 - the URL is on var2.ai / api.var2.ai / *.supabase.co (already var2-hosted);
 - there is no URL **and** no "attached / uploaded / local" wording (the request is text-only — pick a generator or reply null).
 
-**STOP — a local path is NEVER a valid tool argument.** If the value you would pass for `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url` / `image` is a filesystem path or attachment — anything like `./logo.png`, `logo.png`, `/Users/me/pic.jpg`, `/mnt/data/x.png`, `C:\photo.png`, `file://…`, or a chat-attachment handle — DO NOT pass it. var2's backend cannot read your disk; the call fails. You MUST upload the bytes first and pass the returned var2 URL instead. (The MCP boundary rejects path-like values with an upload-first error, so a raw path just wastes a turn.)
+**STOP — a local path is NEVER a valid tool argument** on the remote var2 tools. If the value you would pass for `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url` / `image` is a filesystem path or attachment — anything like `./logo.png`, `logo.png`, `/Users/me/pic.jpg`, `/mnt/data/x.png`, `C:\photo.png`, `file://…`, or a chat-attachment handle — DO NOT pass it. var2's backend cannot read your disk; the call fails. You MUST upload the bytes first and pass the returned var2 URL instead. (The MCP boundary rejects path-like values with an upload-first error, so a raw path just wastes a turn.) Sole exception: `var2_upload_file` (var2-local extension) is a LOCAL tool whose argument IS a path — it reads the bytes on the user's machine itself.
 
-**The upload procedure (do this BEFORE the create/modify/animate/3d call):**
-1. Read the file's raw bytes on YOUR side (you have the file; var2 does not).
-2. **Can run an HTTP PUT (preferred for any real file) →** call `var2_request_upload({ filename, type })`, PUT the raw bytes to the returned `upload_url`, then use the returned `public_url` — bytes never pass through model context.
-   **No PUT available and the file is ≤1 MB →** base64-encode the bytes and call `var2_upload_asset({ type, data: "<base64>", content_type, expected_bytes })`. Use the returned `url`.
-3. Pass that `url` / `public_url` verbatim as the next tool's `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url`.
+**The upload procedure (do this BEFORE the create/modify/animate/3d call).** Take the FIRST row that matches your environment; on failure fall to the next — never give up or downscale the file to fit:
+
+1. **Host supplied a `file` object** (native attachment support, ChatGPT web/desktop) → `var2_upload_asset` with that `file` as-is. Done.
+2. **`var2_upload_file` exists in your tool list** (var2-local extension) → call it with the path; `var2_find_file({ filename })` first when you only have a name. Done.
+3. **You can read the bytes AND run an HTTP PUT** → `var2_request_upload({ filename, type })`, PUT the raw bytes to the returned `upload_url`, use `public_url` — bytes never pass through model context.
+4. **No PUT, file ≤ ~1 MB** → base64-encode and `var2_upload_asset({ type, data, content_type, expected_bytes })`. Use the returned `url`.
+5. **No PUT, file > ~1 MB** → `var2_upload_asset` CHUNKED: slice the base64 string into ~200K-char parts, send via `chunk_index`/`chunk_total`/`upload_id`. Practical up to a few MB — each part is emitted as tool-call tokens; beyond that use step 6 instead.
+6. **LAST RESORT — can't read the bytes at all, or too big for chunking** → `var2_request_upload`, give the USER its `user_upload_page` link; when they say done, `var2_confirm_upload` (`path` + `type`), then continue with `public_url`. Also point them at their client's native path, once (not on every upload): on Claude Desktop, installing the var2 uploader extension (https://www.var2.ai/downloads/var2-local.mcpb — drag into Settings → Extensions, paste a var2 API key) makes every future upload native; on ChatGPT web/desktop they can usually just ATTACH the file to their next message instead.
+
+Then pass the returned `url` / `public_url` verbatim as the next tool's `image_url` / `first_frame_url` / `reference_image_urls` / `audio_url` / `source_video_url`.
 
 | You have… | Use | Result |
 |---|---|---|
+| a host-filled `file` attachment object (ChatGPT web/desktop) | `var2_upload_asset` with `file` as-is | **native** — no PUT, no base64, no browser step |
+| a local path + `var2_upload_file` in your tool list | `var2_upload_file({ path })` | native, one call, ≤100 MB, url + `placeholder_id` |
 | a local path (relative/absolute) or an attachment, AND can run an HTTP PUT | `var2_request_upload` → PUT bytes to `upload_url` → use `public_url` | **durable** first-party var2 URL (no expiry) — preferred for real files |
-| a small file (≤1 MB), no way to PUT | `var2_upload_asset` with base64 `data` | durable var2 URL + `placeholder_id` |
+| a small file (≤ ~1 MB), no way to PUT | `var2_upload_asset` with base64 `data` + `expected_bytes` | durable var2 URL + `placeholder_id` |
+| a file > ~1 MB, no way to PUT | `var2_upload_asset` CHUNKED (`chunk_index`/`chunk_total`/`upload_id`, ~200K-char parts) | full quality — never downscale to fit; a few MB practical max |
 | a third-party / temp URL to pull in | `var2_upload_asset` with `url` | downloaded + stored durably in var2 storage — first-party, no expiry |
+| none of the above (can't read bytes / too big) | `var2_request_upload` → user drags file on its `user_upload_page` → `var2_confirm_upload` | works from every environment, full quality, any size |
 
-All three paths land DURABLE first-party var2 URLs — no third-party host, no expiry. Never push a user's file to an external temp host to mint a URL. File paths and native attachments are resolved to bytes by YOU (the client); never send a raw path to a tool argument. After a `var2_request_upload` PUT, optionally call `var2_confirm_upload` (`path` + `type`) to validate the bytes and get a `placeholder_id` for join_videos chaining.
+All paths land DURABLE first-party var2 URLs — no third-party host, no expiry. Never push a user's file to an external temp host to mint a URL. File paths and native attachments are resolved to bytes by YOU (the client) or by a local/host facility; never send a raw path to a REMOTE tool argument. After a `var2_request_upload` PUT, optionally call `var2_confirm_upload` (`path` + `type`) to validate the bytes and get a `placeholder_id` for join_videos chaining.
 
-Never fabricate URLs to satisfy a tool argument. Specifically never invent: example.com, abc123, placeholder.X, local_file_url, path_to_*, /uploads/*, attachment://*, data:*.
+Never fabricate URLs to satisfy a tool argument. Specifically never invent: example.com, abc123, placeholder.X, local_file_url, path_to_*, /uploads/*, attachment://*, data:*. Never construct a `file` object yourself either — only pass `file` when your host filled it in for an actual attachment.
 
 ## Modality
 
