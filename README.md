@@ -34,6 +34,7 @@ Full instructions: [`INSTALL.md`](INSTALL.md). Agents: see
 | `var2-routing` | Fast dispatch rules — which var2 tool to call when a prompt could map to several (upload vs. generate, create vs. status, music vs. TTS). |
 | `ai-music-video-maker` | End-to-end music video: Suno song → consistent on-model singer → lip-synced per-section clips (`pruna-avatar`) → one stitched final cut. |
 | `creative-orchestrator` | Decomposes an open-ended creative brief into a custom multi-step VAR2 pipeline (character sheets, storyboards, approval gates) and executes it. |
+| `prompt-effects` | Writes Seedance prompts that draw graphic effects into a clip or an edit (neon outline, doodles, word behind, stripes, comic dots, scrapbook, sunburst, beat flash, photo card), fitted to the subject and only for genres they suit. |
 
 ## What's covered
 
