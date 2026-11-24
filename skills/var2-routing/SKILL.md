@@ -66,6 +66,7 @@ Never fabricate URLs to satisfy a tool argument. Specifically never invent: exam
 | Upscale / "to 4K" / sharper / enhance resolution | `var2_modify_image` (type=upscale) |
 | Remove background / transparent PNG / cutout | `var2_modify_image` (type=remove-bg) |
 | Animate / "make a video of this" / spin / pan / "i2v" | `var2_create_video` (type=image-to-video) |
+| A clip whose graphics the video model draws itself (neon outline on the beat, doodles, a word behind the subject, stripes, comic dots, scrapbook, sunburst, photo card), new or as an edit | the `prompt-effects` skill (or `var2_effect_recipes`), then `var2_create_video` |
 | 3D / GLB / mesh / "rotate in 3d" — with image source | `var2_create_3d` |
 | 3D without image source ("a kitten in 3d") | `var2_create_image` then `var2_create_3d` |
 | Song / music / extend track / "replace seconds X-Y" | `var2_create_audio` |
