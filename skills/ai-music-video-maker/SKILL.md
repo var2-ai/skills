@@ -1,6 +1,6 @@
 ---
 name: ai-music-video-maker
-version: 0.4.1
+version: 0.4.2
 description: >-
   Build a complete, end-to-end AI music video on VAR2.ai — generate the song,
   design a consistent on-model singer, produce one talking-head/performance
