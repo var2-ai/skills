@@ -1,6 +1,6 @@
 ---
 name: creative-orchestrator
-version: 0.4.1
+version: 0.4.2
 description: >-
   Decompose any creative idea into a multi-step VAR2.ai MCP pipeline and
   execute it end-to-end. Use when the user has a creative goal that involves
@@ -14,7 +14,7 @@ description: >-
   quick generation with no chaining (use var2-generate directly), and not
   without the VAR2 MCP server connected.
 argument-hint: "[creative brief — e.g. 'a cinematic 9:16 ad for my coffee brand']"
-allowed-tools: mcp__var2__var2_list_models, mcp__var2__var2_estimate_cost, mcp__var2__var2_create_image, mcp__var2__var2_get_image_result, mcp__var2__var2_modify_image, mcp__var2__var2_create_video, mcp__var2__var2_get_video_result, mcp__var2__var2_create_audio, mcp__var2__var2_get_audio_result, mcp__var2__var2_create_dialog, mcp__var2__var2_get_dialog_result, mcp__var2__var2_get_voice_list, mcp__var2__var2_create_3d, mcp__var2__var2_get_3d_result, mcp__var2__var2_upload_asset, mcp__var2__var2_request_upload, mcp__var2__var2_confirm_upload, mcp__var2__var2_trim_audio, mcp__var2__var2_join_videos, mcp__var2__var2_check_join_status, mcp__var2__var2_render_timeline, mcp__var2__var2_save_character, mcp__var2__var2_get_character, mcp__var2__var2_get_results
+allowed-tools: mcp__var2__var2_magic_edit, mcp__var2__var2_motion_catalog, mcp__var2__var2_list_models, mcp__var2__var2_estimate_cost, mcp__var2__var2_create_image, mcp__var2__var2_get_image_result, mcp__var2__var2_modify_image, mcp__var2__var2_create_video, mcp__var2__var2_get_video_result, mcp__var2__var2_create_audio, mcp__var2__var2_get_audio_result, mcp__var2__var2_create_dialog, mcp__var2__var2_get_dialog_result, mcp__var2__var2_get_voice_list, mcp__var2__var2_create_3d, mcp__var2__var2_get_3d_result, mcp__var2__var2_upload_asset, mcp__var2__var2_request_upload, mcp__var2__var2_confirm_upload, mcp__var2__var2_trim_audio, mcp__var2__var2_join_videos, mcp__var2__var2_check_join_status, mcp__var2__var2_render_timeline, mcp__var2__var2_save_character, mcp__var2__var2_get_character, mcp__var2__var2_get_results
 ---
 
 # VAR2 Creative Orchestrator
@@ -49,7 +49,8 @@ Before the first generation in a session, call `var2_list_models`. This both ver
 - `reference-to-video` (seedance, veo) anchors a video to multiple reference images → keep your custom character on-model in cinematic shots
 - `trellis-2` plus screenshots gives you angles a flat generator can't → use it as a planning tool, not just a deliverable
 - Suno returns 2 variations per call → choice for free
-- `var2_join_videos` / `var2_render_timeline` → you can deliver a finished stitched cut, not a cut sheet
+- `var2_magic_edit` → a finished EDIT, not a stitch: give it the clips/pictures (and a voice-over with steps for a documentary) and it cuts on the beat or the voice, adds the genre's transitions and effects, kinetic type and data overlays (dates, numbers, timelines, maps). Use it for every film, ad or reel; up to 58 s of voice-over per call, longer films in parts joined with `var2_join_videos`
+- `var2_join_videos` / `var2_render_timeline` → plain back-to-back stitching or an exact layout the user dictates
 
 **Don't be literal.** "Music video" doesn't mean "one video clip." It means: generate a track, plan visuals tied to its structure, generate per-section frames, animate each, stitch the final cut. "Commercial" doesn't mean "10 seconds of footage." It means: write a 3-4 beat script, design a key visual, generate consistent shots, deliver the assembled spot.
 

@@ -1,6 +1,6 @@
 ---
 name: var2-routing
-version: 0.4.1
+version: 0.4.2
 description: >-
   Dispatch rules for the VAR2 MCP server — which var2 tool to call for image /
   video / audio / voice / 3D / upload / stitch / status requests. Use when a
@@ -72,7 +72,8 @@ Never fabricate URLs to satisfy a tool argument. Specifically never invent: exam
 | Song / music / extend track / "replace seconds X-Y" | `var2_create_audio` |
 | Voice-over / narrate / TTS | `var2_create_dialog` |
 | Cut / split / trim a track by time ("first 45s", "split into pieces") | `var2_trim_audio` |
-| Stitch / join / merge clips back-to-back | `var2_join_videos` (dry_run first) |
+| An EDITED film from pictures / clips: documentary, explainer, ad, promo, reel, "edit these into a video", with or without a voice-over | `var2_magic_edit` (the editor: cuts on the beat or the voice, genre transitions and effects, kinetic type, data overlays for documentary facts, music under the voice). Up to 58 s of voice-over per call; longer: one edit per part, then `var2_join_videos`. Never hand-assemble a film with `var2_render_timeline` |
+| Plain stitch / join / merge clips back-to-back | `var2_join_videos` (dry_run first) |
 | Precise timeline / overlaps / captions / text overlays | `var2_render_timeline` |
 | "Save this character / product as X" | `var2_save_character` |
 | "Use my saved character X" / "which characters do I have" | `var2_get_character` (fetch FIRST, never regenerate) |

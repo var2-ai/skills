@@ -1,5 +1,5 @@
 ---
-version: 0.4.1
+version: 0.4.2
 name: var2-generate
 description: >-
   Generate and edit images, videos, music, voice-overs, and 3D models with
