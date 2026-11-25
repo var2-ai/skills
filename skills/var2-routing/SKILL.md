@@ -1,6 +1,6 @@
 ---
 name: var2-routing
-version: 0.4.0
+version: 0.4.1
 description: >-
   Dispatch rules for the VAR2 MCP server — which var2 tool to call for image /
   video / audio / voice / 3D / upload / stitch / status requests. Use when a
@@ -125,7 +125,7 @@ Never call `var2_upload_asset` for a text-only request. There is nothing to uplo
 | joined / stitched / merged / timeline / "the join render" | `var2_check_join_status` |
 | 3d / glb / mesh | `var2_get_3d_result` |
 
-Pollers long-poll server-side and return the current snapshot. If `state` is still `waiting`, call the same poller again (pass `inline_media: false` on repeats) until `completed`/`failed` — re-call, don't sleep-loop. In hosts with an inline viewer that auto-polls, one snapshot is enough.
+The chat's inline preview polls every creation by itself - never poll. Call a status tool at most ONCE per creation, only when the user asks or a next call needs the finished URL (then with `wait_seconds: 40`; clients drop longer calls). If that one check says it is still generating, stop: do the steps that don't need it, end your turn, and check again only after the user's next message.
 
 ## Asset URLs
 

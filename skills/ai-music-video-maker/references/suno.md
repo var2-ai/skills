@@ -53,8 +53,9 @@ then generate in custom mode.
 
 ## After the call
 
-- Poll `var2_get_audio_result` with the returned `placeholder_id`. Audio
-  long-polls; a couple of calls usually suffice.
+- The chat's preview shows the track when it lands. Check
+  `var2_get_audio_result` at most once per track (`wait_seconds: 40`), only
+  when the next step needs its URL; never in a loop.
 - A create call returns **two variations** of the same prompt. Report **both**
   share URLs verbatim and let the user pick. The chosen track's
   `placeholder_id` is what every later phase uses.

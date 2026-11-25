@@ -1,6 +1,6 @@
 ---
 name: creative-orchestrator
-version: 0.4.0
+version: 0.4.1
 description: >-
   Decompose any creative idea into a multi-step VAR2.ai MCP pipeline and
   execute it end-to-end. Use when the user has a creative goal that involves
@@ -105,7 +105,7 @@ Wait for approval, then run step 1.
 - The user might want to course-correct between steps (e.g. "is the character right before we proceed?")
 - Cost is high enough that you want explicit approval at each gate
 
-Include every share URL verbatim. Poll with `var2_get_*_result` — it long-polls server-side (50s for images, ~5min for video/audio/3D), so one call per asset usually returns the result. Don't loop-poll every 2s.
+Include every share URL verbatim. Never poll: the chat's inline preview tracks every creation by itself. Call `var2_get_*_result` at most ONCE per asset, only when the next step needs its URL, with `wait_seconds: 40`; if it is still generating, do the steps that don't need it and end your turn — check again only after the user's next message.
 
 When step N completes (or a parallel batch completes), in the same reply: (1) share URLs of what just finished, (2) one-line preview of the next step using those assets, (3) "ready to continue?"
 
