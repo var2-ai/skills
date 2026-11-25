@@ -34,7 +34,7 @@ error message to the user **verbatim** — it's precise.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Stuck `waiting` after several polls | Slow modality (video/3D/music/join) | Keep polling; the getter long-polls — re-call (`inline_media: false` on repeats). If it never resolves, report it and let the user retry later. |
+| Stuck `waiting` after several polls | Slow modality (video/3D/music/join) | Stop checking — the chat's preview shows it when it lands. Check once more only after the user's next message (never in a loop). If it never resolves, report it and let the user retry later. |
 | `state: failed` | Provider error or bad input | Read the error message, adjust prompt/params/model, retry once. |
 | Join render fails with worker timeout | Long render queue | Re-queue once via `var2_join_videos` `{plan_id}`; if it fails again, report. |
 | `var2_check_join_status` rejects the id | A `jp_...` plan id was passed | Plans go to `var2_join_videos` `{plan_id}` to START the render; only the plain-UUID placeholder goes to the status tool. |

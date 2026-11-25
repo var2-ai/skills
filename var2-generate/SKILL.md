@@ -1,5 +1,5 @@
 ---
-version: 0.4.0
+version: 0.4.1
 name: var2-generate
 description: >-
   Generate and edit images, videos, music, voice-overs, and 3D models with
@@ -80,12 +80,14 @@ Full decision table, chunked uploads, and the blocked-PUT recovery ladder:
   same refs) may run in the same turn when the budget allows; when in doubt,
   submit one job, wait for the result, then continue. Never blind-fire a large
   batch.
-- **Always poll to completion.** After a `create_*`/`modify` call returns a
-  `placeholder_id` with `state: "waiting"`, call the matching `get_*_result`
-  until `state` is `completed` or `failed`. The poll calls long-poll
-  server-side — just call again if still waiting; never sleep-loop. On repeat
-  checks or when only chaining the URL onward, pass `inline_media: false` so
-  the same media isn't re-rendered into context.
+- **Check once, never poll.** After a `create_*`/`modify` call returns a
+  `placeholder_id` with `state: "waiting"`, the chat's inline preview polls it
+  by itself and shows it when it lands. Call the matching `get_*_result` at
+  most ONCE per creation — only when the user asks or a next call needs the
+  finished URL — with `wait_seconds: 40` (clients drop longer calls). If it is
+  still `waiting`, stop: do the steps that don't need it, end your turn, and
+  check again only after the user's next message. Never call a status tool in
+  a loop. Pass `inline_media: false` when only chaining the URL onward.
 - **Report share URLs verbatim.** Every result includes a `var2.ai` share URL
   (and sometimes several). Print them exactly. The share page handles preview,
   download, and progress. Do **not** paste raw JSON, placeholder IDs, internal

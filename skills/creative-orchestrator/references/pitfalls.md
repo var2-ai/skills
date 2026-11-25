@@ -101,9 +101,11 @@ run it before the image becomes a `first_frame_url` for a final render.
 
 ## Don't poll-loop
 
-`var2_get_*_result` long-polls server-side (50s for images, ~5min for
-video/audio/3D). One call is usually enough. Only call again if it returns
-`state: waiting`, and pass `inline_media: false` on repeat checks.
+The chat's inline preview polls every creation by itself. Call
+`var2_get_*_result` at most ONCE per creation, only when a next step needs the
+URL, with `wait_seconds: 40`. If it returns `state: waiting`, stop: do the
+steps that don't need it and end your turn — check again only after the user's
+next message. Never re-call in a loop.
 
 ## Idempotency on retries
 

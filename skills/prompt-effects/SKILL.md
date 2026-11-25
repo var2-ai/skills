@@ -1,6 +1,6 @@
 ---
 name: prompt-effects
-version: 0.4.0
+version: 0.4.1
 description: >-
   Write video-model prompts that draw graphic effects into a clip — a neon
   outline that changes colour on the beat, hand-drawn doodles, a big word

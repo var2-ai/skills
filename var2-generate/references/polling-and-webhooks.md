@@ -21,12 +21,14 @@ matches:
 
 Behavior:
 
-- The getter **long-polls server-side** — a single call blocks for a while and
-  returns as soon as the job finishes or the wait window elapses.
-- If it returns still `waiting`, just call the getter again with the same
-  `placeholder_id`. Image jobs usually resolve in one or two polls; video,
-  music, and 3D take longer (several polls); join/stitch renders are the
-  slowest (minutes to hours — check in occasionally rather than continuously).
+- The chat's inline preview **polls each creation by itself** — you never need to.
+- Call the getter **at most once per creation**, and only when the user asks or a
+  next call needs the finished URL. Pass `wait_seconds: 40`: the call is held
+  until the job finishes or 40 s pass (most clients drop a tool call after ~60 s,
+  and a dropped call that gets retried is a loop).
+- If it returns still `waiting`, stop checking: do the steps that don't need it,
+  end your turn, and check again only after the user's next message. Video,
+  music, 3D and join/stitch renders take minutes — never re-call in a loop.
 - Stop when `state` is `completed` (report share URL[s]) or `failed` (read the
   error, see `troubleshooting.md`).
 - `var2_get_image_result`, `var2_get_audio_result`, and

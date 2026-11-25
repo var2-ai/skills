@@ -58,8 +58,8 @@ One `var2_create_video` per scene: `model: pruna-avatar`,
 `audio_url` = the segment's URL, `audio_duration_seconds` = **that segment's
 actual length** (required, drives pricing), `duration` the same,
 `resolution` 720p (draft/cheap) or 1080p (final). Respect the per-turn call
-budget stated in the tool response; poll each clip with
-`var2_get_video_result`.
+budget stated in the tool response; check each clip at most once with
+`var2_get_video_result` (`wait_seconds: 40`), never in a loop.
 
 ## The final stitch — `var2_join_videos`
 
